@@ -1,5 +1,5 @@
 #pragma once
-#include "./span.h"
+#include "span.h"
 #define TOKEN_LENGTH 46
 
 // clang-format off

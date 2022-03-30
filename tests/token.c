@@ -2,15 +2,8 @@
 #define WITH_MOCKING
 #include "../include/token.h"
 #include "../nobuild.h"
-#define Comma ,
 
-DECLARE_MOCK(span_t, span_new);
-
-void test_tokens() {
-  MOCK(span_new, {.ptr = NULL Comma len = 1});
-  token_t token = token_next("+");
-  ASSERT(token.token == Plus);
-}
+DECLARE_MOCK(span_t, span_new, char *data Comma size_t len);
 
 int main() {
   DESCRIBE("token");
@@ -43,6 +36,12 @@ int main() {
     ASSERT((token_e)45 == Void);
   });
 
-  SHOULDF("return all tokens correctly", test_tokens);
+  MOCK(span_new, (span_t){.ptr = NULL Comma.len = 1});
+  SHOULDB("return all tokens correctly", {
+    char *token_string = "+";
+    token_t token = token_next(token_string);
+    ASSERT(token.token == Plus);
+    INFO("Complete %s", token_string);
+  });
   RETURN();
 }

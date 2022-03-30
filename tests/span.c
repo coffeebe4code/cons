@@ -3,7 +3,7 @@
 #include "../include/span.h"
 #include "../nobuild.h"
 
-static const char *string = "Hello";
+static char *string = "Hello";
 
 int main() {
   DESCRIBE("span");
