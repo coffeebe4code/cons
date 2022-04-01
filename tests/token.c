@@ -3,12 +3,38 @@
 #include "../include/token.h"
 #include "../nobuild.h"
 
-DECLARE_MOCK(span_t, span_new, char *data Comma size_t len);
+DECLARE_MOCK(span_t, span_new, char *data COMMA size_t len);
+
+#define EASY_LENGTH 51
+static token_e easy_list[] = {
+    OParen,   CParen,   OBrace,   CBrace, OArray,      CArray,   Dot,
+    Comma,    Dollar,   Question, Pound,  Colon,       SColon,   Backtick,
+    At,       Lt,       LtEq,     Gt,     GtEq,        Div,      BSlash,
+    Plus,     Rest,     Sub,      Mul,    Or,          And,      Xor,
+    LShift,   RShift,   Not,      As,     NotAs,       OrAs,     XorAs,
+    LShiftAs, RShiftAs, AndLog,   OrLog,  NotEquality, Equality, NotLog,
+    Mod,      Inc,      Dec,      AddAs,  SubAs,       DivAs,    MulAs,
+    ModAs,    Error};
+
+static char *easy_strings[] = {
+    "(",  ")",  "{",   "}",   "[",  "]",  ".",  ",",  "$", "?",  "#",
+    ":",  ";",  "`",   "@",   "<",  "<=", ">",  ">=", "/", "\\", "+",
+    "_",  "-",  "*",   "||",  "&&", "^",  "<<", ">>", "!", "=",  "~=",
+    "|=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~", "%",  "++",
+    "--", "+=", "-=",  "/=",  "*=", "%=", ""};
+
+void test_easy() {
+  for (int i = 0; i < EASY_LENGTH; i++) {
+    MOCK(span_new, (span_t){.ptr = NULL COMMA.len = 1});
+    token_t token = token_next(easy_strings[i]);
+    ASSERT(token.token == (token_e)easy_list[i]);
+  }
+}
 
 int main() {
   DESCRIBE("token");
   SHOULDB("get string len for all tokens and match", {
-    for (size_t i = 0; i < TOKEN_LENGTH; i++) {
+    for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
       ASSERT(strlen(keyword_list[i]) == keyword_len[i]);
     }
   });
@@ -36,12 +62,12 @@ int main() {
     ASSERT((token_e)45 == Void);
   });
 
-  MOCK(span_new, (span_t){.ptr = NULL Comma.len = 1});
-  SHOULDB("return all tokens correctly", {
-    char *token_string = "+";
-    token_t token = token_next(token_string);
-    ASSERT(token.token == Plus);
-    INFO("Complete %s", token_string);
+  MOCK(span_new, (span_t){.ptr = NULL COMMA.len = 1});
+  SHOULDF("test easy", test_easy);
+  SHOULDB("return an empty token_t on empty", {
+    char *empty = "";
+    token_t token = token_next(empty);
+    ASSERT(token.token == Empty);
   });
   RETURN();
 }

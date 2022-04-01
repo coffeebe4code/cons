@@ -1,9 +1,9 @@
 #pragma once
 #include "span.h"
-#define TOKEN_LENGTH 46
+#define KEYWORD_LENGTH 46
 
 // clang-format off
-static char *keyword_list[TOKEN_LENGTH] __attribute__((unused)) = {
+static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
   "import", 
   "define",
   "macro",
@@ -52,7 +52,7 @@ static char *keyword_list[TOKEN_LENGTH] __attribute__((unused)) = {
   "void"
 };
 
-static int keyword_len[TOKEN_LENGTH] __attribute__((unused)) = {
+static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
   6,
   6,
   5,
@@ -165,7 +165,9 @@ typedef enum token_e {
   Backtick,
   At,
   Lt,
+  LtEq,
   Gt,
+  GtEq,
   Div,
   BSlash,
   Plus,
@@ -185,7 +187,7 @@ typedef enum token_e {
   LShiftAs,
   RShiftAs,
   AndLog,
-  OrgLog,
+  OrLog,
   NotEquality,
   Equality,
   NotLog,
@@ -195,6 +197,7 @@ typedef enum token_e {
   AddAs,
   SubAs,
   DivAs,
+  MulAs,
   ModAs,
   DQuote,
   SQuote,
@@ -204,6 +207,7 @@ typedef enum token_e {
   Num,
   NewLine,
   Error,
+  Empty
 } token_e;
 
 typedef struct {
