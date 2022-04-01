@@ -183,6 +183,7 @@ typedef enum token_e {
   As,
   NotAs,
   OrAs,
+  AndAs,
   XorAs,
   LShiftAs,
   RShiftAs,

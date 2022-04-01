@@ -11,7 +11,11 @@ static inline token_t tokenize_lt(char *data) {
   if (*++data != '\0') {
     switch (*data) {
     case '<':
-      token = make_token(start, 2, LShift);
+      if (*++data != '\0' && *data == '=') {
+        token = make_token(start, 3, LShiftAs);
+      } else {
+        token = make_token(start, 2, LShift);
+      }
       break;
     case '=':
       token = make_token(start, 2, LtEq);
@@ -74,7 +78,11 @@ static inline token_t tokenize_gt(char *data) {
   if (*++data != '\0') {
     switch (*data) {
     case '>':
-      token = make_token(start, 2, RShift);
+      if (*++data != '\0' && *data == '=') {
+        token = make_token(start, 3, RShiftAs);
+      } else {
+        token = make_token(start, 2, RShift);
+      }
       break;
     case '=':
       token = make_token(start, 2, GtEq);
@@ -197,62 +205,37 @@ static inline token_t tokenize_mul(char *data) {
   return token;
 }
 
-static inline token_t tokenize_div(char *data) {
+static inline token_t tokenize_one(char *data, token_e def_tok, const char comp,
+                                   token_e comp_tok) {
   char *start = data;
   token_t token;
   if (*++data != '\0') {
-    switch (*data) {
-    case '=':
-      token = make_token(start, 2, DivAs);
-      break;
-    default:
-      token = make_token(start, 1, Div);
-      break;
+    if (*data == comp) {
+      token = make_token(start, 2, comp_tok);
+    } else {
+      token = make_token(start, 1, def_tok);
     }
   } else {
-    token = make_token(start, 1, Div);
+    token = make_token(start, 1, def_tok);
   }
   return token;
 }
 
-static inline token_t tokenize_minus(char *data) {
+static inline token_t tokenize_two(char *data, token_e def_tok,
+                                   const char comp1, token_e comp1_tok,
+                                   const char comp2, token_e comp2_tok) {
   char *start = data;
   token_t token;
   if (*++data != '\0') {
-    switch (*data) {
-    case '-':
-      token = make_token(start, 2, Dec);
-      break;
-    case '=':
-      token = make_token(start, 2, SubAs);
-      break;
-    default:
-      token = make_token(start, 1, Sub);
-      break;
+    if (*data == comp1) {
+      token = make_token(start, 2, comp1_tok);
+    } else if (*data == comp2) {
+      token = make_token(start, 2, comp2_tok);
+    } else {
+      token = make_token(start, 1, def_tok);
     }
   } else {
-    token = make_token(start, 1, Sub);
-  }
-  return token;
-}
-
-static inline token_t tokenize_plus(char *data) {
-  char *start = data;
-  token_t token;
-  if (*++data != '\0') {
-    switch (*data) {
-    case '+':
-      token = make_token(start, 2, Inc);
-      break;
-    case '=':
-      token = make_token(start, 2, AddAs);
-      break;
-    default:
-      token = make_token(start, 1, Plus);
-      break;
-    }
-  } else {
-    token = make_token(start, 1, Plus);
+    token = make_token(start, 1, def_tok);
   }
   return token;
 }
@@ -315,40 +298,40 @@ token_t token_next(char *data) {
     token = tokenize_gt(data);
     break;
   case '|':
-    token = tokenize_or(data);
+    token = tokenize_two(data, OrLog, '=', OrAs, '|', Or);
     break;
   case '&':
-    token = tokenize_and(data);
+    token = tokenize_two(data, AndLog, '&', And, '=', AndAs);
     break;
   case '<':
     token = tokenize_lt(data);
     break;
   case '+':
-    token = tokenize_plus(data);
+    token = tokenize_two(data, Plus, '+', Inc, '=', AddAs);
     break;
   case '-':
-    token = tokenize_minus(data);
+    token = tokenize_two(data, Sub, '-', Dec, '=', SubAs);
     break;
   case '/':
-    token = tokenize_div(data);
+    token = tokenize_one(data, Div, '=', DivAs);
     break;
   case '*':
-    token = tokenize_mul(data);
+    token = tokenize_one(data, Mul, '=', MulAs);
     break;
   case '^':
-    token = tokenize_xor(data);
+    token = tokenize_one(data, Xor, '=', XorAs);
     break;
   case '!':
-    token = tokenize_not(data);
+    token = tokenize_one(data, Not, '=', NotEquality);
     break;
   case '%':
-    token = tokenize_mod(data);
+    token = tokenize_one(data, Mod, '=', ModAs);
     break;
   case '~':
-    token = tokenize_tilde(data);
+    token = tokenize_one(data, NotLog, '=', NotAs);
     break;
   case '=':
-    token = tokenize_eq(data);
+    token = tokenize_one(data, As, '=', Equality);
     break;
   case EOF || '\0':
     token = (token_t){Empty, {NULL, 0}};

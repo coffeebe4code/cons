@@ -5,23 +5,22 @@
 
 DECLARE_MOCK(span_t, span_new, char *data COMMA size_t len);
 
-#define EASY_LENGTH 51
+#define EASY_LENGTH 52
 static token_e easy_list[] = {
-    OParen,   CParen,   OBrace,   CBrace, OArray,      CArray,   Dot,
-    Comma,    Dollar,   Question, Pound,  Colon,       SColon,   Backtick,
-    At,       Lt,       LtEq,     Gt,     GtEq,        Div,      BSlash,
-    Plus,     Rest,     Sub,      Mul,    Or,          And,      Xor,
-    LShift,   RShift,   Not,      As,     NotAs,       OrAs,     XorAs,
-    LShiftAs, RShiftAs, AndLog,   OrLog,  NotEquality, Equality, NotLog,
-    Mod,      Inc,      Dec,      AddAs,  SubAs,       DivAs,    MulAs,
-    ModAs,    Error};
+    OParen,      CParen,   OBrace, CBrace, OArray,   CArray,   Dot,    Comma,
+    Dollar,      Question, Pound,  Colon,  SColon,   Backtick, At,     Lt,
+    LtEq,        Gt,       GtEq,   Div,    BSlash,   Plus,     Rest,   Sub,
+    Mul,         Or,       And,    Xor,    LShift,   RShift,   Not,    As,
+    NotAs,       OrAs,     AndAs,  XorAs,  LShiftAs, RShiftAs, AndLog, OrLog,
+    NotEquality, Equality, NotLog, Mod,    Inc,      Dec,      AddAs,  SubAs,
+    DivAs,       MulAs,    ModAs,  Error};
 
 static char *easy_strings[] = {
-    "(",  ")",  "{",   "}",   "[",  "]",  ".",  ",",  "$", "?",  "#",
-    ":",  ";",  "`",   "@",   "<",  "<=", ">",  ">=", "/", "\\", "+",
-    "_",  "-",  "*",   "||",  "&&", "^",  "<<", ">>", "!", "=",  "~=",
-    "|=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~", "%",  "++",
-    "--", "+=", "-=",  "/=",  "*=", "%=", ""};
+    "(",  ")",  "{",  "}",   "[",   "]",  ".",  ",",  "$",  "?",  "#",
+    ":",  ";",  "`",  "@",   "<",   "<=", ">",  ">=", "/",  "\\", "+",
+    "_",  "-",  "*",  "||",  "&&",  "^",  "<<", ">>", "!",  "=",  "~=",
+    "|=", "&=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~",  "%",
+    "++", "--", "+=", "-=",  "/=",  "*=", "%=", ""};
 
 void test_easy() {
   for (int i = 0; i < EASY_LENGTH; i++) {
