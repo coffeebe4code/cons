@@ -218,3 +218,4 @@ typedef struct {
 
 token_t token_next(char *data);
 char *token_error(token_t *token);
+size_t word_len_check(char *data);

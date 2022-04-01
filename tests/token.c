@@ -30,6 +30,47 @@ void test_easy() {
   }
 }
 
+void test_keywords() {
+  for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
+    MOCK(span_new, (span_t){.ptr = keyword_list[i] COMMA.len = keyword_len[i]});
+    token_t token = token_next(keyword_list[i]);
+    ASSERT((size_t)token.token == i);
+  }
+}
+void test_len_words() {
+  char *null_end = "symbol1";
+  char *underscore = "symbol_1";
+  char *dash = "symbol-1;";
+  char *func = "do_something()";
+  size_t len = word_len_check(null_end);
+  ASSERT(len == 7ul);
+  len = word_len_check(underscore);
+  ASSERT(len == 8ul);
+  len = word_len_check(func);
+  ASSERT(len == 12ul);
+  len = word_len_check(dash);
+  ASSERT(len == 8ul);
+}
+
+void test_symbols() {
+  char *null_end = "symbol1";
+  char *underscore = "symbol_1";
+  char *dash = "symbol-1;";
+  char *func = "do_something()";
+  MOCK(span_new, (span_t){.ptr = null_end COMMA.len = 1});
+  MOCK(span_new, (span_t){.ptr = underscore COMMA.len = 1});
+  MOCK(span_new, (span_t){.ptr = func COMMA.len = 1});
+  MOCK(span_new, (span_t){.ptr = dash COMMA.len = 1});
+  token_t token = token_next(null_end);
+  ASSERT(token.token == Symbol);
+  token = token_next(underscore);
+  ASSERT(token.token == Symbol);
+  token = token_next(func);
+  ASSERT(token.token == Symbol);
+  token = token_next(dash);
+  ASSERT(token.token == Symbol);
+}
+
 int main() {
   DESCRIBE("token");
   SHOULDB("get string len for all tokens and match", {
@@ -68,5 +109,8 @@ int main() {
     token_t token = token_next(empty);
     ASSERT(token.token == Empty);
   });
+  SHOULDF("test symbols", test_symbols);
+  SHOULDF("test len words", test_len_words);
+  SHOULDF("test keywords", test_keywords);
   RETURN();
 }
