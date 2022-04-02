@@ -4,94 +4,106 @@
 #include <string.h>
 
 // forwards
-static inline token_t make_token(char *data, size_t len, token_e tok);
 
-static inline token_t tokenize_lt(char *data) {
-  char *start = data;
-  token_t token;
+static inline token_e tokenize_lt(char *data, int *len) {
+  token_e token;
   if (*++data != '\0') {
     switch (*data) {
     case '<':
       if (*++data != '\0' && *data == '=') {
-        token = make_token(start, 3, LShiftAs);
+        *len = 3;
+        token = LShiftAs;
       } else {
-        token = make_token(start, 2, LShift);
+        *len = 2;
+        token = LShift;
       }
       break;
     case '=':
-      token = make_token(start, 2, LtEq);
+      *len = 2;
+      token = LtEq;
       break;
     default:
-      token = make_token(start, 1, Lt);
+      *len = 1;
+      token = Lt;
       break;
     }
   } else {
-    token = make_token(start, 1, Lt);
+    *len = 1;
+    token = Lt;
   }
   return token;
 }
 
-static inline token_t tokenize_gt(char *data) {
-  char *start = data;
-  token_t token;
+static inline token_e tokenize_gt(char *data, int *len) {
+  token_e token;
   if (*++data != '\0') {
     switch (*data) {
     case '>':
       if (*++data != '\0' && *data == '=') {
-        token = make_token(start, 3, RShiftAs);
+        *len = 3;
+        token = RShiftAs;
       } else {
-        token = make_token(start, 2, RShift);
+        *len = 2;
+        token = RShift;
       }
       break;
     case '=':
-      token = make_token(start, 2, GtEq);
+      *len = 2;
+      token = GtEq;
       break;
     default:
-      token = make_token(start, 1, Gt);
+      *len = 1;
+      token = Gt;
       break;
     }
   } else {
-    token = make_token(start, 1, Gt);
+    *len = 1;
+    token = Gt;
   }
   return token;
 }
 
-static inline token_t tokenize_one(char *data, token_e def_tok, const char comp,
-                                   token_e comp_tok) {
-  char *start = data;
-  token_t token;
+static inline token_e tokenize_one(char *data, int *len, token_e def_tok,
+                                   const char comp, token_e comp_tok) {
+  token_e token;
   if (*++data != '\0') {
     if (*data == comp) {
-      token = make_token(start, 2, comp_tok);
+      *len = 2;
+      token = comp_tok;
     } else {
-      token = make_token(start, 1, def_tok);
+      *len = 1;
+      token = def_tok;
     }
   } else {
-    token = make_token(start, 1, def_tok);
+    *len = 1;
+    token = def_tok;
   }
   return token;
 }
 
-static inline token_t tokenize_two(char *data, token_e def_tok,
+static inline token_e tokenize_two(char *data, int *len, token_e def_tok,
                                    const char comp1, token_e comp1_tok,
                                    const char comp2, token_e comp2_tok) {
-  char *start = data;
-  token_t token;
+  token_e token;
   if (*++data != '\0') {
     if (*data == comp1) {
-      token = make_token(start, 2, comp1_tok);
+      *len = 2;
+      token = comp1_tok;
     } else if (*data == comp2) {
-      token = make_token(start, 2, comp2_tok);
+      *len = 2;
+      token = comp2_tok;
     } else {
-      token = make_token(start, 1, def_tok);
+      *len = 1;
+      token = def_tok;
     }
   } else {
-    token = make_token(start, 1, def_tok);
+    *len = 1;
+    token = def_tok;
   }
   return token;
 }
 
-size_t word_len_check(char *data) {
+inline size_t word_len_check(char *data) {
   int next = 1;
   size_t len = 1;
   while (*++data != '\0' && next) {
@@ -112,135 +124,147 @@ size_t word_len_check(char *data) {
   return len;
 }
 
-static inline token_t tokenize_word(char *data) {
-  char *start = data;
-  token_t token;
-  size_t len = word_len_check(data);
-  token = make_token(start, len, Symbol);
+static inline token_e tokenize_word(char *data, int *len) {
+  token_e token;
+  *len = word_len_check(data);
+  token = Symbol;
   for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
-    if (keyword_len[i] == len) {
-      if (strncmp(keyword_list[i], data, len) == 0) {
-        token.token = (token_e)i;
+    if (keyword_len[i] == *len) {
+      if (strncmp(keyword_list[i], data, *len) == 0) {
+        token = (token_e)i;
       }
     }
   }
   return token;
 }
 
-token_t token_next(char *data) {
-  token_t token;
+token_e token_next(char *data, int *len) {
+  token_e token;
   if (isalpha(*data)) {
-    token = tokenize_word(data);
+    token = tokenize_word(data, len);
   } else {
     switch (*data) {
     case '(':
-      token = make_token(data, 1, OParen);
+      *len = 1;
+      token = OParen;
       break;
     case ')':
-      token = make_token(data, 1, CParen);
+      *len = 1;
+      token = CParen;
       break;
     case '{':
-      token = make_token(data, 1, OBrace);
+      *len = 1;
+      token = OBrace;
       break;
     case '}':
-      token = make_token(data, 1, CBrace);
+      *len = 1;
+      token = CBrace;
       break;
     case '[':
-      token = make_token(data, 1, OArray);
+      *len = 1;
+      token = OArray;
       break;
     case ']':
-      token = make_token(data, 1, CArray);
+      *len = 1;
+      token = CArray;
       break;
     case '.':
-      token = make_token(data, 1, Dot);
+      *len = 1;
+      token = Dot;
       break;
     case ',':
-      token = make_token(data, 1, Comma);
+      *len = 1;
+      token = Comma;
       break;
     case '$':
-      token = make_token(data, 1, Dollar);
+      *len = 1;
+      token = Dollar;
       break;
     case '?':
-      token = make_token(data, 1, Question);
+      *len = 1;
+      token = Question;
       break;
     case '#':
-      token = make_token(data, 1, Pound);
+      *len = 1;
+      token = Pound;
       break;
     case ':':
-      token = make_token(data, 1, Colon);
+      *len = 1;
+      token = Colon;
       break;
     case ';':
-      token = make_token(data, 1, SColon);
+      *len = 1;
+      token = SColon;
       break;
     case '_':
-      token = make_token(data, 1, Rest);
+      *len = 1;
+      token = Rest;
       break;
     case '\\':
-      token = make_token(data, 1, BSlash);
+      *len = 1;
+      token = BSlash;
       break;
     case '`':
-      token = make_token(data, 1, Backtick);
+      *len = 1;
+      token = Backtick;
       break;
     case '@':
-      token = make_token(data, 1, At);
+      *len = 1;
+      token = At;
       break;
     case '>':
-      token = tokenize_gt(data);
+      token = tokenize_gt(data, len);
       break;
     case '|':
-      token = tokenize_two(data, OrLog, '=', OrAs, '|', Or);
+      token = tokenize_two(data, len, OrLog, '=', OrAs, '|', Or);
       break;
     case '&':
-      token = tokenize_two(data, AndLog, '&', And, '=', AndAs);
+      token = tokenize_two(data, len, AndLog, '&', And, '=', AndAs);
       break;
     case '<':
-      token = tokenize_lt(data);
+      token = tokenize_lt(data, len);
       break;
     case '+':
-      token = tokenize_two(data, Plus, '+', Inc, '=', AddAs);
+      token = tokenize_two(data, len, Plus, '+', Inc, '=', AddAs);
       break;
     case '-':
-      token = tokenize_two(data, Sub, '-', Dec, '=', SubAs);
+      token = tokenize_two(data, len, Sub, '-', Dec, '=', SubAs);
       break;
     case '/':
-      token = tokenize_one(data, Div, '=', DivAs);
+      token = tokenize_one(data, len, Div, '=', DivAs);
       break;
     case '*':
-      token = tokenize_one(data, Mul, '=', MulAs);
+      token = tokenize_one(data, len, Mul, '=', MulAs);
       break;
     case '^':
-      token = tokenize_one(data, Xor, '=', XorAs);
+      token = tokenize_one(data, len, Xor, '=', XorAs);
       break;
     case '!':
-      token = tokenize_one(data, Not, '=', NotEquality);
+      token = tokenize_one(data, len, Not, '=', NotEquality);
       break;
     case '%':
-      token = tokenize_one(data, Mod, '=', ModAs);
+      token = tokenize_one(data, len, Mod, '=', ModAs);
       break;
     case '~':
-      token = tokenize_one(data, NotLog, '=', NotAs);
+      token = tokenize_one(data, len, NotLog, '=', NotAs);
       break;
     case '=':
-      token = tokenize_one(data, As, '=', Equality);
+      token = tokenize_one(data, len, As, '=', Equality);
       break;
     case EOF || '\0':
-      token = (token_t){Empty, {NULL, 0}};
+      *len = 0;
+      token = Empty;
       break;
     default:
       if (strcmp(data, "") == 0) {
-        token = (token_t){Empty, {NULL, 0}};
+        *len = 0;
+        token = Empty;
       } else {
-        token = make_token(data, 1, Error);
+        *len = 1;
+        token = Error;
       }
       break;
     }
   }
   return token;
 }
-
-static inline token_t make_token(char *start, size_t len, token_e tok) {
-  token_t token = {.span = span_new(start, len), .token = tok};
-  return token;
-}
-
-char *token_error(token_t *token) { return "error"; }

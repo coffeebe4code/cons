@@ -1,5 +1,5 @@
 #pragma once
-#include "span.h"
+#include <stdio.h>
 #define KEYWORD_LENGTH 46
 
 // clang-format off
@@ -211,11 +211,5 @@ typedef enum token_e {
   Empty
 } token_e;
 
-typedef struct {
-  token_e token;
-  span_t span;
-} token_t;
-
-token_t token_next(char *data);
-char *token_error(token_t *token);
+token_e token_next(char *data, int *len);
 size_t word_len_check(char *data);

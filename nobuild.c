@@ -1,5 +1,5 @@
 #define NOBUILD_IMPLEMENTATION
-#define CFLAGS "-Wall", "-Werror", "-std=c11"
+#define CFLAGS "-Wall", "-Werror", "-std=c11", "-Wextra"
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {

@@ -3,8 +3,6 @@
 #include "../include/token.h"
 #include "../nobuild.h"
 
-DECLARE_MOCK(span_t, span_new, char *data COMMA size_t len);
-
 #define EASY_LENGTH 52
 static token_e easy_list[] = {
     OParen,      CParen,   OBrace, CBrace, OArray,   CArray,   Dot,    Comma,
@@ -24,17 +22,17 @@ static char *easy_strings[] = {
 
 void test_easy() {
   for (int i = 0; i < EASY_LENGTH; i++) {
-    MOCK(span_new, (span_t){.ptr = NULL COMMA.len = 1});
-    token_t token = token_next(easy_strings[i]);
-    ASSERT(token.token == (token_e)easy_list[i]);
+    int len = 0;
+    token_e token = token_next(easy_strings[i], &len);
+    ASSERT(token == (token_e)easy_list[i]);
   }
 }
 
 void test_keywords() {
   for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
-    MOCK(span_new, (span_t){.ptr = keyword_list[i] COMMA.len = keyword_len[i]});
-    token_t token = token_next(keyword_list[i]);
-    ASSERT((size_t)token.token == i);
+    int len = 0;
+    token_e token = token_next(keyword_list[i], &len);
+    ASSERT((size_t)token == i);
   }
 }
 void test_len_words() {
@@ -57,18 +55,15 @@ void test_symbols() {
   char *underscore = "symbol_1";
   char *dash = "symbol-1;";
   char *func = "do_something()";
-  MOCK(span_new, (span_t){.ptr = null_end COMMA.len = 1});
-  MOCK(span_new, (span_t){.ptr = underscore COMMA.len = 1});
-  MOCK(span_new, (span_t){.ptr = func COMMA.len = 1});
-  MOCK(span_new, (span_t){.ptr = dash COMMA.len = 1});
-  token_t token = token_next(null_end);
-  ASSERT(token.token == Symbol);
-  token = token_next(underscore);
-  ASSERT(token.token == Symbol);
-  token = token_next(func);
-  ASSERT(token.token == Symbol);
-  token = token_next(dash);
-  ASSERT(token.token == Symbol);
+  int len = 0;
+  token_e token = token_next(null_end, &len);
+  ASSERT(token == Symbol);
+  token = token_next(underscore, &len);
+  ASSERT(token == Symbol);
+  token = token_next(func, &len);
+  ASSERT(token == Symbol);
+  token = token_next(dash, &len);
+  ASSERT(token == Symbol);
 }
 
 int main() {
@@ -102,12 +97,12 @@ int main() {
     ASSERT((token_e)45 == Void);
   });
 
-  MOCK(span_new, (span_t){.ptr = NULL COMMA.len = 1});
   SHOULDF("test easy", test_easy);
   SHOULDB("return an empty token_t on empty", {
     char *empty = "";
-    token_t token = token_next(empty);
-    ASSERT(token.token == Empty);
+    int len = 0;
+    token_e token = token_next(empty, &len);
+    ASSERT(token == Empty);
   });
   SHOULDF("test symbols", test_symbols);
   SHOULDF("test len words", test_len_words);
