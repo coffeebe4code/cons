@@ -207,6 +207,7 @@ typedef enum token_e {
   Bin,
   Num,
   NewLine,
+  Wsp,
   Error,
   Empty
 } token_e;

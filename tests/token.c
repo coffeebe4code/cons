@@ -3,7 +3,7 @@
 #include "../include/token.h"
 #include "../nobuild.h"
 
-#define EASY_LENGTH 52
+#define EASY_LENGTH 53
 static token_e easy_list[] = {
     OParen,      CParen,   OBrace, CBrace, OArray,   CArray,   Dot,    Comma,
     Dollar,      Question, Pound,  Colon,  SColon,   Backtick, At,     Lt,
@@ -11,20 +11,21 @@ static token_e easy_list[] = {
     Mul,         Or,       And,    Xor,    LShift,   RShift,   Not,    As,
     NotAs,       OrAs,     AndAs,  XorAs,  LShiftAs, RShiftAs, AndLog, OrLog,
     NotEquality, Equality, NotLog, Mod,    Inc,      Dec,      AddAs,  SubAs,
-    DivAs,       MulAs,    ModAs,  Error};
+    DivAs,       MulAs,    ModAs,  Error,  Wsp};
 
 static char *easy_strings[] = {
     "(",  ")",  "{",  "}",   "[",   "]",  ".",  ",",  "$",  "?",  "#",
     ":",  ";",  "`",  "@",   "<",   "<=", ">",  ">=", "/",  "\\", "+",
     "_",  "-",  "*",  "||",  "&&",  "^",  "<<", ">>", "!",  "=",  "~=",
     "|=", "&=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~",  "%",
-    "++", "--", "+=", "-=",  "/=",  "*=", "%=", ""};
+    "++", "--", "+=", "-=",  "/=",  "*=", "%=", "",  "   "};
 
 void test_easy() {
   for (int i = 0; i < EASY_LENGTH; i++) {
     int len = 0;
     token_e token = token_next(easy_strings[i], &len);
     ASSERT(token == (token_e)easy_list[i]);
+    ASSERT(len == (int)strlen(easy_strings[i]));
   }
 }
 
@@ -35,6 +36,7 @@ void test_keywords() {
     ASSERT((size_t)token == i);
   }
 }
+
 void test_len_words() {
   char *null_end = "symbol1";
   char *underscore = "symbol_1";
@@ -102,6 +104,14 @@ int main() {
     char *empty = "";
     int len = 0;
     token_e token = token_next(empty, &len);
+    ASSERT(token == Empty);
+  });
+  SHOULDB("return an empty token_t at end", {
+    char *end_test = "import";
+    int len = 0;
+    token_e token = token_next(end_test, &len);
+    end_test += len;
+    token = token_next(end_test, &len);
     ASSERT(token == Empty);
   });
   SHOULDF("test symbols", test_symbols);

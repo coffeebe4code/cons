@@ -1,7 +1,12 @@
 #include "../../include/lex.h"
 
 lexed_t lex_collect(lex_source_t *lex) {
-  lexed_t val = {.tok = lex->peeked_token, .span = lex->peeked_span};
+  lexed_t val;
+  if ((int)lex->peeked_token == -1) {
+    val = lex_peek(lex);
+  } else {
+    val = (lexed_t){.tok = lex->peeked_token, .span = lex->peeked_span};
+  }
   lex->peeked_token = (token_e)-1;
   lex->peeked_span = (span_t){NULL, 0};
   lex->curr_ptr += val.span.len;

@@ -138,12 +138,28 @@ static inline token_e tokenize_word(char *data, int *len) {
   return token;
 }
 
+static inline size_t skip_whitespace(char *data) {
+  size_t len = 1;
+  while (*++data != '\0') {
+    if (*data == ' ') {
+      len++;
+    } else {
+      break;
+    }
+  }
+  return len;
+}
+
 token_e token_next(char *data, int *len) {
   token_e token;
   if (isalpha(*data)) {
     token = tokenize_word(data, len);
   } else {
     switch (*data) {
+    case ' ':
+      token = Wsp;
+      *len = (int)skip_whitespace(data);
+      break;
     case '(':
       *len = 1;
       token = OParen;
@@ -250,6 +266,10 @@ token_e token_next(char *data, int *len) {
       break;
     case '=':
       token = tokenize_one(data, len, As, '=', Equality);
+      break;
+    case '\n':
+      token = NewLine;
+      *len = 1;
       break;
     case EOF || '\0':
       *len = 0;
