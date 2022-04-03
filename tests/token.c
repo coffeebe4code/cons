@@ -70,7 +70,7 @@ int main() {
   DESCRIBE("token");
   SHOULDB("get string len for all tokens and match", {
     for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
-      ASSERT(strlen(keyword_list[i]) == keyword_len[i]);
+      ASSERT((size_t)strlen(keyword_list[i]) == (size_t)keyword_len[i]);
     }
   });
 

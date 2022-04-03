@@ -5,6 +5,10 @@
 int main(int argc, char **argv) {
   FEATURE("token");
   FEATURE("span");
+  FEATURE("lex");
+  FEATURE("parse");
+  DEPS("lex", "token", "span");
+  DEPS("parse", "lex", "token", "span");
   BOOTSTRAP(argc, argv);
   return 0;
 }
