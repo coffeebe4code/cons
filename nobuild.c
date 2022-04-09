@@ -7,9 +7,11 @@ int main(int argc, char **argv) {
   FEATURE("span");
   FEATURE("lex");
   FEATURE("parse");
+  FEATURE("gen");
   FEATURE("arch");
   DEPS("lex", "token", "span");
   DEPS("parse", "lex", "token", "span");
+  DEPS("arch", "gen");
   BOOTSTRAP(argc, argv);
   return 0;
 }

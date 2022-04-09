@@ -15,4 +15,14 @@ typedef enum regs_e {
   EBP = 0x101,
   ESI = 0x110,
   EDI = 0x111,
+  R8 = 0x1000,
+  R9 = 0x1001,
+  R10 = 0x1010,
+  R11 = 0x1011,
+  R12 = 0x1100,
+  R13 = 0x1101,
+  R14 = 0x1110,
+  R15 = 0x1111,
 } regs_e;
+
+int64_t addi_x64(regs_e dest, imm64) {}
