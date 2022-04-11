@@ -24,5 +24,3 @@ typedef enum regs_e {
   R14 = 0x1110,
   R15 = 0x1111,
 } regs_e;
-
-int64_t addi_x64(regs_e dest, imm64) {}
