@@ -19,32 +19,32 @@ void check_size(gen_source_t *gen, uint8_t size) {
   gen->len += size;
 }
 
-void gen_add8(gen_source_t *gen, uint8_t value) {
+void gen_add8(gen_source_t *gen, byte_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
-  gen->current_pos += size + 1;
+  gen->current_pos += size;
 }
 
-void gen_add16(gen_source_t *gen, uint16_t value) {
+void gen_add16(gen_source_t *gen, byte2_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
-  gen->current_pos += size + 1;
+  gen->current_pos += size;
 }
 
-void gen_add32(gen_source_t *gen, uint32_t value) {
+void gen_add32(gen_source_t *gen, byte4_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
-  gen->current_pos += size + 1;
+  gen->current_pos += size;
 }
 
-void gen_add64(gen_source_t *gen, uint64_t value) {
+void gen_add64(gen_source_t *gen, byte8_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
-  gen->current_pos += size + 1;
+  gen->current_pos += size;
 }
 
 void gen_print_hex(gen_source_t *gen) {

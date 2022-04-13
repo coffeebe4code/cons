@@ -714,6 +714,7 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
   size_t __var_##name##_actual = 0;                                            \
   type name() { return (type)__var_##name[__var_##name##_inc++]; }
 #define DECLARE_MOCK_T(def, type) typedef struct def type;
+#define DECLARE_MOCK_U(def, type) typedef union def type;
 #define MOCK(name, value) __var_##name[__var_##name##_actual++] = value;
 #define MOCK_T(type, value, name) type name = (type)value;
 #else
