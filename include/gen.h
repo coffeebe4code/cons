@@ -2,6 +2,9 @@
 #include "stdint.h"
 #include "stdio.h"
 
+typedef unsigned char byte_t;
+typedef struct byte16_t;
+
 typedef struct gen_source_t {
   size_t len;
   size_t cap;
