@@ -1,10 +1,11 @@
 #pragma once
 #include "stdint.h"
 
-#define COMMA ,
-#define DEF_OPCODES(arch, vals) typedef enum arch##_ops_e{vals} arch##_ops_e;
-#define DEF_REGS(arch, vals) typedef enum arch##_regs_e{vals} arch##_regs_e;
+#define ARCH_LEN 1
+static char *arches_list[ARCH_LEN] = {};
+static int arch_iter = 0;
 
+// typedefs
 typedef union imm8 {
   uint8_t u;
   int8_t i;
@@ -25,4 +26,16 @@ typedef union imm64 {
   int64_t i;
 } imm64;
 
-int is_le();
+typedef struct instr_t {
+
+} instr_t;
+
+// forwards
+
+// macros
+#define COMMA ,
+#define DEF_OPCODES(arch, vals) typedef enum arch##_ops_e{vals} arch##_ops_e;
+#define DEF_REGS(arch, vals) typedef enum arch##_regs_e{vals} arch##_regs_e;
+
+#define DEF_ARCH_SETUP(arch, fn)                                               \
+  void __attribute__((constructor)) arch_init##arch##() { fn(); }\
