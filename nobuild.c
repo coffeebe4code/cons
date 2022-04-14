@@ -10,11 +10,12 @@ int main(int argc, char **argv) {
   FEATURE("gen");
   FEATURE("arch");
   FEATURE("uni");
-  FEATURE("byte-bit");
+  FEATURE("ir");
+  FEATURE("byte");
   DEPS("lex", "token", "span");
   DEPS("parse", "lex", "token", "span");
   DEPS("arch", "gen");
-  DEPS("byte-bit", "uni");
+  DEPS("byte", "uni");
   BOOTSTRAP(argc, argv);
   return 0;
 }
