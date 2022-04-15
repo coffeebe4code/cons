@@ -1,4 +1,4 @@
-#include "../../include/byte-bit.h"
+#include "../../include/byte.h"
 #include <inttypes.h>
 
 byte2_t convert_byte2_be(uint16_t b) {

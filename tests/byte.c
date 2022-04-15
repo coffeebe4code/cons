@@ -1,6 +1,6 @@
 #define NOBUILD_IMPLEMENTATION
 #define WITH_MOCKING
-#include "../include/byte-bit.h"
+#include "../include/byte.h"
 #include "../nobuild.h"
 
 int main() {

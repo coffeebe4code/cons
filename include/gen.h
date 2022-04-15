@@ -1,5 +1,5 @@
 #pragma once
-#include "byte-bit.h"
+#include "byte.h"
 #include "stdint.h"
 #include "stdio.h"
 
