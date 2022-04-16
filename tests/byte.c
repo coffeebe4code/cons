@@ -4,7 +4,7 @@
 #include "../nobuild.h"
 
 int main() {
-  DESCRIBE("byte-bit");
+  DESCRIBE("byte");
   SHOULDB("convert to big endian byte series", {
     byte2_t val = BYTE2(0xFF00);
     ASSERT(val.arr[0] == 0xFF);
