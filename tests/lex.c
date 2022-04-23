@@ -11,7 +11,7 @@ void test_peek() {
   lex_source_t val = lex_new(full_string);
   MOCK(token_next, Pound);
   MOCK(span_new, (span_t){full_string COMMA 1});
-  lexed_t peeked = lex_peek(&val);
+  lexeme_t peeked = lex_peek(&val);
   ASSERT(peeked.tok == Pound);
   ASSERT(val.curr_ptr == full_string);
   ASSERT(val.peeked_span.ptr == full_string);
@@ -27,12 +27,12 @@ void test_collect() {
   lex_source_t val = lex_new(full_string);
   MOCK(token_next, Pound);
   MOCK(span_new, (span_t){full_string COMMA 1});
-  lexed_t collect = lex_collect(&val);
+  lexeme_t collect = lex_collect(&val);
   ASSERT(collect.tok == Pound);
   ASSERT(collect.span.ptr == full_string);
   MOCK(token_next, Import);
   MOCK(span_new, (span_t){full_string + 1 COMMA 6});
-  lexed_t peeked = lex_peek(&val);
+  lexeme_t peeked = lex_peek(&val);
   ASSERT(val.curr_ptr == full_string + 1);
   ASSERT(peeked.tok == Import);
 }

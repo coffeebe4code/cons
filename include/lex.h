@@ -1,4 +1,5 @@
 #pragma once
+#include "lexeme.h"
 #include "span.h"
 #include "token.h"
 
@@ -8,13 +9,8 @@ typedef struct {
   token_e peeked_token;
 } lex_source_t;
 
-typedef struct {
-  token_e tok;
-  span_t span;
-} lexed_t;
-
-lexed_t lex_collect(lex_source_t *lex);
-lexed_t lex_peek(lex_source_t *lex);
+lexeme_t lex_collect(lex_source_t *lex);
+lexeme_t lex_peek(lex_source_t *lex);
 lex_source_t lex_new(char *start);
 int is_bin_op(token_e tok);
 int is_expr(token_e tok);

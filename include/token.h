@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#define KEYWORD_LENGTH 46
+#define KEYWORD_LENGTH 48
 
 // clang-format off
 static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -49,7 +49,9 @@ static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
   "vol",
   "true",
   "false",
-  "void"
+  "void",
+  "iface",
+  "gen",
 };
 
 static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -95,10 +97,12 @@ static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
   3,
   5,
   4,
-  3,
+  3, // vol
   4,
   5,
   4,
+  5,
+  3,
 };
 // clang-format on
 

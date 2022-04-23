@@ -5,6 +5,64 @@
 
 // forwards
 
+static inline token_e tokenize_char(char *data, int *len) {
+  int cont = 1;
+  token_e tok = Error;
+  while (*++data != '\0' && cont) {
+    switch (*data) {
+    case '\\':
+      (*len)++;
+      if (*++data != '\0') {
+        (*len)++;
+      } else {
+        cont = 0;
+      }
+      break;
+    case '\'':
+      tok = SQuote;
+      cont = 0;
+      break;
+    default:
+      (*len)++;
+      break;
+    }
+  }
+  return tok;
+}
+
+static inline token_e tokenize_string(char *data, int *len) {
+  int cont = 1;
+  token_e tok = Error;
+  while (*++data != '\0' && cont) {
+    switch (*data) {
+    case '\\':
+      (*len)++;
+      if (*++data != '\0') {
+        switch (*data) {
+        case '"':
+          tok = DQuote;
+          cont = 0;
+          break;
+        default:
+          (*len)++;
+          break;
+        }
+      } else {
+        cont = 0;
+      }
+      break;
+    case '"':
+      tok = DQuote;
+      cont = 0;
+      break;
+    default:
+      (*len)++;
+      break;
+    }
+  }
+  return tok;
+}
+
 static inline token_e tokenize_lt(char *data, int *len) {
   token_e token;
   if (*++data != '\0') {
@@ -151,6 +209,7 @@ static inline size_t skip_whitespace(char *data) {
 }
 
 token_e token_next(char *data, int *len) {
+  *len = 0;
   token_e token;
   if (isalpha(*data)) {
     token = tokenize_word(data, len);
@@ -159,6 +218,12 @@ token_e token_next(char *data, int *len) {
     case ' ':
       token = Wsp;
       *len = (int)skip_whitespace(data);
+      break;
+    case '"':
+      token = tokenize_string(data, len);
+      break;
+    case '\'':
+      token = tokenize_char(data, len);
       break;
     case '(':
       *len = 1;
