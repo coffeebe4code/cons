@@ -20,6 +20,47 @@ static char *easy_strings[] = {
     "|=", "&=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~",  "%",
     "++", "--", "+=", "-=",  "/=",  "*=", "%=", "",  "   "};
 
+void test_chars() {
+  char *chars = "'a'";
+  int len = 0;
+  token_e token = token_next(chars, &len);
+  ASSERT(token == SQuote);
+  ASSERT(len == 1);
+
+  char *chars2 = "'\\n'";
+  token = token_next(chars2, &len);
+  ASSERT(token == SQuote);
+  ASSERT(len == 2);
+
+  char *chars3 = "'n";
+  token = token_next(chars3, &len);
+  ASSERT(token == Error);
+  ASSERT(len == 1);
+
+  char *chars4 = "'\\";
+  token = token_next(chars4, &len);
+  ASSERT(token == Error);
+  ASSERT(len == 1);
+}
+
+void test_strings() {
+  char *strings = "\"hello\"";
+  int len = 0;
+  token_e token = token_next(strings, &len);
+  ASSERT(token == DQuote);
+  ASSERT(len == 5);
+
+  char *strings2 = "\"henl\\nlo\"";
+  token = token_next(strings2, &len);
+  ASSERT(token == DQuote);
+  ASSERT(len == 8);
+
+  char *strings3 = "\"henl";
+  token = token_next(strings3, &len);
+  ASSERT(token == Error);
+  ASSERT(len == 4);
+}
+
 void test_easy() {
   for (int i = 0; i < EASY_LENGTH; i++) {
     int len = 0;
@@ -117,5 +158,7 @@ int main() {
   SHOULDF("test symbols", test_symbols);
   SHOULDF("test len words", test_len_words);
   SHOULDF("test keywords", test_keywords);
+  SHOULDF("test chars", test_chars);
+  SHOULDF("test strings", test_strings);
   RETURN();
 }

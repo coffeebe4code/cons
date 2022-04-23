@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <time.h>
 typedef FILE *Fd;
 
@@ -15,11 +16,17 @@ typedef FILE *Fd;
 #include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 typedef pid_t Pid;
+double main_utime = 0;
+long int main_sutime = 0;
+double cmd_utime = 0;
+long int cmd_sutime = 0;
 #else
 #include "windows.h"
 #include <direct.h>
@@ -430,7 +437,6 @@ static size_t feature_count = 0;
 static size_t deps_count = 0;
 static size_t exe_count = 0;
 static size_t vend_count = 0;
-static clock_t start = 0;
 static char this_prefix[256] = {0};
 
 // forwards
@@ -579,7 +585,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define BOOTSTRAP(argc, argv)                                                  \
   do {                                                                         \
-    start = clock();                                                           \
     handle_args(argc, argv);                                                   \
   } while (0)
 
@@ -1051,7 +1056,6 @@ int handle_args(int argc, char **argv) {
       exe_deps.count = 0;
     }
 
-    INFO("NOBUILD took ... %f sec", ((double)clock() - start) / CLOCKS_PER_SEC);
     RESULTS();
   }
   if (r) {
@@ -1438,7 +1442,19 @@ void build(Cstr_Array comp_flags) {
     exe_deps.elems = NULL;
     exe_deps.count = 0;
   }
-  INFO("NOBUILD took ... %f sec", ((double)clock() - start) / CLOCKS_PER_SEC);
+  struct rusage r;
+  struct rusage r2;
+  getrusage(RUSAGE_SELF, &r);
+  main_sutime += r.ru_utime.tv_usec;
+  main_utime += r.ru_utime.tv_sec;
+  getrusage(RUSAGE_CHILDREN, &r2);
+  cmd_sutime += r2.ru_utime.tv_usec;
+  cmd_utime += r2.ru_utime.tv_sec;
+
+  INFO("NOBUILD took ... %ld usec",
+       (long int)(main_utime * 10000000L + main_sutime));
+  INFO("CMDS took ... %ld usec",
+       (long int)(cmd_utime * 10000000L + cmd_sutime));
   RESULTS();
 }
 
@@ -1468,6 +1484,7 @@ void pid_wait(Pid pid) {
     if (waitpid(pid, &wstatus, 0) < 0) {
       PANIC("could not wait on command (pid %d): %d", pid, errno);
     }
+
     if (WIFEXITED(wstatus)) {
       int exit_status = WEXITSTATUS(wstatus);
       if (exit_status != 0) {

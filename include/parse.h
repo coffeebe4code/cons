@@ -1,9 +1,13 @@
 #pragma once
-#include "span.h"
-#include "token.h"
+#include "ast.h"
+#include "lex.h"
+#include "lexeme.h"
 
-typedef enum expr_e { SExpr, Literal, BinOp, UnOp } expr_e;
+typedef struct entry_points_t {
+  ast_t **top_level;
+  int has_main;
+  int is_start;
+} entry_points_t;
 
-typedef struct {
-  expr_e expr_kind;
-} ast_t;
+ast_t *ast_build_graph(lex_source_t *lexer, entry_points_t *entry_points_t);
+void ast_free_all(ast_t *ast);
