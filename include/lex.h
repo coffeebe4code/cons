@@ -15,4 +15,5 @@ lex_source_t lex_new(char *start);
 int is_bin_op(token_e tok);
 int is_expr(token_e tok);
 int is_un_op(token_e tok);
+int is_lit(token_e tok);
 int get_precedence(token_e tok);
