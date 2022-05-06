@@ -13,7 +13,7 @@ gen_source_t gen_new() {
 
 void check_size(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
-    gen->cap >>= 2;
+    gen->cap <<= 2;
     gen->binary = realloc(gen->binary, gen->cap);
   }
   gen->len += size;

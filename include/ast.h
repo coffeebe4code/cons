@@ -19,3 +19,6 @@ typedef struct ast_t {
   } tok3;
 
 } ast_t;
+
+#define AST_LIT(val)                                                           \
+  (ast_t) { .expr_kind = Literal, .tok1.literal = val }

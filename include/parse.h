@@ -2,14 +2,18 @@
 #include "ast.h"
 #include "lex.h"
 #include "lexeme.h"
+#include "option.h"
 
 typedef struct {
-  ast_t *top_level;
+  ast_t *asts;
+  lexeme_t *lexemes;
+  size_t cap;
+  size_t len;
 } parser_source_t;
 
-ast_t *ast_build_graph(lex_source_t *lexer, parser_source_t *parser);
-void ast_free_all(ast_t *ast);
-void parse_expr();
-void parse_bin();
-void parse_un();
-int parse_lit();
+parser_source_t parser_new();
+void parser_free(ast_t *ast);
+option_t parse_expr(lex_source_t *lexer, parser_source_t *parser);
+option_t parse_bin(lex_source_t *lexer, parser_source_t *parser);
+int parse_un(lex_source_t *lexer);
+option_t parse_lit(lex_source_t *lexer, parser_source_t *parser);

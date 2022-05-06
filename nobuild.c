@@ -8,6 +8,7 @@ int main(int argc, char **argv) {
   FEATURE("lex");
   FEATURE("lexeme");
   FEATURE("ast");
+  FEATURE("option");
   FEATURE("parse");
   FEATURE("gen");
   FEATURE("arch");

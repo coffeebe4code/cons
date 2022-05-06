@@ -26,3 +26,88 @@ lexeme_t lex_peek(lex_source_t *lex) {
 lex_source_t lex_new(char *start) {
   return (lex_source_t){{NULL, 0}, start, -1};
 }
+
+int is_lit(token_e tok) {
+  switch (tok) {
+  case Null:
+  case True:
+  case False:
+  case SQuote:
+  case DQuote:
+  case Num:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_bin_op(token_e tok) {
+  switch (tok) {
+  case Lt:
+  case LtEq:
+  case Gt:
+  case GtEq:
+  case Div:
+  case Sub:
+  case Mul:
+  case Or:
+  case And:
+  case Xor:
+  case LShift:
+  case RShift:
+  case AndLog:
+  case OrLog:
+  case NotEquality:
+  case Equality:
+  case Mod:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_un_op(token_e tok) {
+  switch (tok) {
+  case Not:
+  case Inc:
+  case NotLog:
+  case Addr:
+  case Ptr:
+  case Dec:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_rh_assoc(token_e tok) {
+  switch (tok) {
+  case Inc:
+  case Dec:
+  case NotLog:
+  case As:
+  case AddAs:
+  case SubAs:
+  case MulAs:
+  case DivAs:
+  case ModAs:
+  case OrAs:
+  case AndAs:
+  case XorAs:
+  case LShiftAs:
+  case RShiftAs:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_lh_assoc(token_e tok) { return !is_rh_assoc(tok); }
