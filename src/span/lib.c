@@ -1,7 +1,7 @@
 #include "../../include/span.h"
 
 span_t span_new(char *data, size_t len) {
-  span_t span = {.ptr = data, len = len};
+  span_t span = {.ptr = data, .len = len};
   return span;
 }
 
