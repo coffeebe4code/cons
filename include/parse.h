@@ -1,12 +1,10 @@
 #pragma once
 #include "ast.h"
 #include "lex.h"
-#include "lexeme.h"
 #include "option.h"
 
 typedef struct {
   ast_t *asts;
-  lexeme_t *lexemes;
   size_t cap;
   size_t len;
 } parser_source_t;
