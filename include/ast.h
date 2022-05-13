@@ -1,17 +1,22 @@
 #pragma once
+#include "byte.h"
 #include "lexeme.h"
 
-typedef enum expr_e { Expr, Literal, BinOp, UnOp } expr_e;
+typedef enum expr_e { Expr, Number, Identifier, BinOp, UnOp } expr_e;
+
+// Number 1 .number
+// BinOp 3 .bin_left_expr .bin_op .bin_right_expr
+// UnOp 1 .unary_op
 
 typedef struct ast_t {
   expr_e expr_kind;
   union {
-    lexeme_t *literal;
+    byte8_t number;
     struct ast_t *bin_left_expr;
-    lexeme_t *unary_op;
+    token_e unary_op;
   } tok1;
   union {
-    lexeme_t *bin_op;
+    token_e *bin_op;
     struct ast_t *unary_expr;
   } tok2;
   union {
@@ -20,5 +25,7 @@ typedef struct ast_t {
 
 } ast_t;
 
-#define AST_LIT(val)                                                           \
-  (ast_t) { .expr_kind = Literal, .tok1.literal = val }
+#define AST_Num(val)                                                           \
+  (ast_t) {                                                                    \
+    .expr_kind = Number, .tok1.number = (byte8_t) { .raw = val }               \
+  }
