@@ -3,7 +3,71 @@
 #include <stdio.h>
 #include <string.h>
 
-// forwards
+static inline void collect_digits(char *data, int *len) {
+  int cont = 1;
+  data--;
+  while (*++data != '\0' && cont) {
+    if (isdigit(*data)) {
+      (*len)++;
+    } else {
+      cont = 0;
+    }
+  }
+}
+
+static inline token_e tokenize_number(char *data, int *len) {
+  int cont = 1;
+  token_e tok = Num;
+  if (*++data != '\0') {
+    if (isalpha(*data)) {
+    } else {
+      switch (*data) {
+      case 'b':
+      case '.':
+        collect_digits(data, len);
+        if (*len == 2) {
+          tok = Error;
+        }
+        break;
+      case 'x':
+        collect_digits(data, len);
+        if (*len == 2) {
+          tok = Error;
+        }
+        break;
+      default:
+        tok = Error;
+      }
+    }
+  }
+  if (tok == Error) {
+    return tok;
+  }
+  if (len > 
+  while (*++data != '\0' && cont) {
+    if (isdigit(*data)) {
+      (*len)++;
+    } else {
+      switch (*data) {
+      case '.':
+        (*len)++;
+        cont = 0;
+        if (*++data != '\0') {
+          if (!isdigit(*data)) {
+            tok = Error;
+          } else {
+            tokenize_rem_digit(data, len);
+          }
+        }
+        break;
+      default:
+        (*len)++;
+        cont = 0;
+      }
+    }
+  }
+  return tok;
+}
 
 static inline token_e tokenize_char(char *data, int *len) {
   int cont = 1;
@@ -213,6 +277,8 @@ token_e token_next(char *data, int *len) {
   token_e token;
   if (isalpha(*data)) {
     token = tokenize_word(data, len);
+  } else if (isdigit(*data)) {
+    token = tokenize_number(data, len);
   } else {
     switch (*data) {
     case ' ':

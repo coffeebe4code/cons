@@ -20,6 +20,30 @@ static char *easy_strings[] = {
     "|=", "&=", "^=", "<<=", ">>=", "&",  "|",  "!=", "==", "~",  "%",
     "++", "--", "+=", "-=",  "/=",  "*=", "%=", "",  "   "};
 
+void test_nums() {
+  char *chars = "72";
+  int len = 0;
+  token_e token = token_next(chars, &len);
+  INFO("len %d", len);
+  ASSERT(token == Num);
+  ASSERT(len == 2);
+
+  char *chars2 = "0x00";
+  token = token_next(chars2, &len);
+  ASSERT(token == Num);
+  ASSERT(len == 4);
+
+  char *chars3 = "0x";
+  token = token_next(chars3, &len);
+  ASSERT(token == Error);
+  ASSERT(len == 2);
+
+  char *chars4 = "7.0";
+  token = token_next(chars4, &len);
+  ASSERT(token == Num);
+  ASSERT(len == 3);
+}
+
 void test_chars() {
   char *chars = "'a'";
   int len = 0;
@@ -160,5 +184,6 @@ int main() {
   SHOULDF("test keywords", test_keywords);
   SHOULDF("test chars", test_chars);
   SHOULDF("test strings", test_strings);
+  SHOULDF("test numbers", test_nums);
   RETURN();
 }
