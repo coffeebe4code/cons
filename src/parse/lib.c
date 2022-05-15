@@ -48,13 +48,9 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser) {
 
 ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *val = NULL;
-  puts("2");
   val = parse_num(lexer, parser);
-  puts("3");
   if (val == NULL) {
-    puts("4");
     val = parse_ident(lexer, parser);
-    puts("5");
   }
   return val;
 }
@@ -93,5 +89,4 @@ void parser_print(parser_source_t *parser) {
   ast_t *first = &parser->asts[0];
   puts("begin : ");
   ast_print(first);
-  puts(": end");
 }

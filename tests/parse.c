@@ -13,12 +13,18 @@ DECLARE_MOCK(int, is_high_bin, token_e t);
 
 void test_terminal() {
   // 7;
-  lex_source_t lex = lex_new("7");
+  char *input = "7.0";
+  lex_source_t lex = lex_new(input);
+  MOCK(lex_peek, (lexeme_t){.tok = Dec});
+  lexeme_t mocked_lex = (lexeme_t){.tok = Dec, .span = (span_t){.ptr = input}};
+  MOCK(lex_collect, mocked_lex);
+  MOCK(is_num, 1);
   parser_source_t parse = parser_new();
 
   ast_t *val = parse_terminal(&lex, &parse);
-  parser_print(&parse);
   ASSERT(val->expr_kind == Number);
+  ASSERT(val->tok1.number.raw == 7);
+  parser_print(&parse);
 }
 
 // void test_num() {
