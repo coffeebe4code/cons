@@ -69,6 +69,18 @@ int is_lit(token_e tok) {
   }
 }
 
+int is_low_bin(token_e tok) {
+  switch (tok) {
+  case Sub:
+  case Plus:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
 int is_high_bin(token_e tok) {
   switch (tok) {
   case Div:

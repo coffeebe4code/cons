@@ -9,7 +9,7 @@ typedef struct {
 } parser_source_t;
 
 parser_source_t parser_new();
-void parser_free(ast_t *ast);
+void parser_free(parser_source_t *parser);
 ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser);
@@ -18,4 +18,5 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser);
 int parse_un(lex_source_t *lexer);
 ast_t *parse_lit(lex_source_t *lexer, parser_source_t *parser);
+char *parser_get(parser_source_t *parser);
 void parser_print(parser_source_t *parser);

@@ -16,6 +16,7 @@ void lex_free(lex_source_t *lex);
 int is_num(token_e tok);
 int is_bin_op(token_e tok);
 int is_high_bin(token_e tok);
+int is_low_bin(token_e tok);
 int is_expr(token_e tok);
 int is_un_op(token_e tok);
 int is_lit(token_e tok);

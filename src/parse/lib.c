@@ -2,6 +2,7 @@
 #include "../../include/lex.h"
 #include "../../include/lexeme.h"
 #include "../../include/parse.h"
+#include "stdio.h"
 #include "string.h"
 
 void check_size(parser_source_t *parser) {
@@ -55,6 +56,16 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   return val;
 }
 
+ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *val = parse_terminal(lexer, parser);
+  if (val != NULL) {
+    while (is_low_bin(lex_peek(lexer).tok)) {
+      // do something.
+    }
+  }
+  return val;
+}
+
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *val = parse_terminal(lexer, parser);
   if (val != NULL) {
@@ -65,28 +76,41 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
   return val;
 }
 
-void ast_print(ast_t *ast) {
+void ast_print(ast_t *ast, char *print) {
   switch (ast->expr_kind) {
   case Number:
-    printf(" %zu ", ast->tok1.number.raw);
+    sprintf(print, "%f", (double)ast->tok1.number.raw);
+    print += ast->tok1.number.raw;
     break;
   case Identifier:
-    printf(" %s ", ast->tok1.ident);
+    strncpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
+    print += strlen(ast->tok1.ident);
     break;
   case BinOp:
-    printf("(");
-    ast_print(ast->tok1.bin_left_expr);
+    *print = '(';
+    print++;
+    ast_print(ast->tok1.bin_left_expr, print);
+    sprintf(print, "%f", (double)ast->tok2.bin_op);
+    print += ast->tok2.bin_op;
     printf(" %d ", (int)(ast->tok2.bin_op));
-    ast_print(ast->tok3.bin_right_expr);
-    printf(")");
+    ast_print(ast->tok3.bin_right_expr, print);
+    *print = ')';
+    print++;
     break;
-  default:
-    printf("( NA )");
+  default: {
+    char *na = "( NA )";
+    strncpy(print, na, 6);
+    print += 6;
+    break;
+  }
   }
 }
 
-void parser_print(parser_source_t *parser) {
+char *parser_get(parser_source_t *parser) {
   ast_t *first = &parser->asts[0];
-  puts("begin : ");
-  ast_print(first);
+  char *print = calloc(10000000, sizeof(char));
+  ast_print(first, print);
+  return print;
 }
+
+void parser_free(parser_source_t *parser) { free(parser->asts); }
