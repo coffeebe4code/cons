@@ -14,12 +14,9 @@ DECLARE_MOCK(int, is_high_bin, token_e t);
 void test_terminal() {
   // 7;
   lex_source_t lex = lex_new("7");
-  INFO("1");
   parser_source_t parse = parser_new();
-  INFO("1");
 
   ast_t *val = parse_terminal(&lex, &parse);
-  INFO("1");
   parser_print(&parse);
   ASSERT(val->expr_kind == Number);
 }

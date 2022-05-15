@@ -3,12 +3,43 @@
 #include <stdio.h>
 #include <string.h>
 
-static inline void collect_digits(char *data, int *len) {
+static inline void collect_hex(char *data, int *len) {
   int cont = 1;
-  data--;
-  while (*++data != '\0' && cont) {
+  data++;
+  while (*data != '\0' && cont) {
     if (isdigit(*data)) {
       (*len)++;
+      data++;
+    } else if ((*data >= 'a' && *data <= 'f') ||
+               (*data >= 'A' && *data <= 'F')) {
+      (*len)++;
+      data++;
+    } else {
+      cont = 0;
+    }
+  }
+}
+
+static inline void collect_digits(char *data, int *len) {
+  int cont = 1;
+  data++;
+  while (*data != '\0' && cont) {
+    if (isdigit(*data)) {
+      (*len)++;
+      data++;
+    } else {
+      cont = 0;
+    }
+  }
+}
+
+static inline void collect_binary(char *data, int *len) {
+  int cont = 1;
+  data++;
+  while (*data != '\0' && cont) {
+    if (*data == '1' || *data == '0') {
+      (*len)++;
+      data++;
     } else {
       cont = 0;
     }
@@ -18,21 +49,40 @@ static inline void collect_digits(char *data, int *len) {
 static inline token_e tokenize_number(char *data, int *len) {
   int cont = 1;
   token_e tok = Num;
-  if (*++data != '\0') {
-    if (isalpha(*data)) {
+  if (*data == '0') {
+    (*len)++;
+    data++;
+    if (*data != '\0' && isdigit(*data)) {
+      (*len)++;
     } else {
       switch (*data) {
+      case '\0':
+        break;
       case 'b':
+        (*len)++;
+        collect_binary(data, len);
+        if (*len == 2) {
+          tok = Error;
+        } else {
+          tok = Bin;
+        }
+        break;
       case '.':
+        (*len)++;
         collect_digits(data, len);
         if (*len == 2) {
           tok = Error;
+        } else {
+          tok = Dec;
         }
         break;
       case 'x':
-        collect_digits(data, len);
+        (*len)++;
+        collect_hex(data, len);
         if (*len == 2) {
           tok = Error;
+        } else {
+          tok = Hex;
         }
         break;
       default:
@@ -40,28 +90,22 @@ static inline token_e tokenize_number(char *data, int *len) {
       }
     }
   }
-  if (tok == Error) {
+  if (tok == Error || tok == Hex || tok == Dec) {
     return tok;
   }
-  if (len > 
-  while (*++data != '\0' && cont) {
+  while (*data != '\0' && cont) {
     if (isdigit(*data)) {
       (*len)++;
+      data++;
     } else {
       switch (*data) {
       case '.':
         (*len)++;
+        collect_digits(data, len);
+        tok = Dec;
         cont = 0;
-        if (*++data != '\0') {
-          if (!isdigit(*data)) {
-            tok = Error;
-          } else {
-            tokenize_rem_digit(data, len);
-          }
-        }
         break;
       default:
-        (*len)++;
         cont = 0;
       }
     }
