@@ -27,6 +27,32 @@ lex_source_t lex_new(char *start) {
   return (lex_source_t){{NULL, 0}, start, -1};
 }
 
+int is_num(token_e tok) {
+  switch (tok) {
+  case I32:
+  case I16:
+  case U32:
+  case U64:
+  case I64:
+  case U16:
+  case U8:
+  case I8:
+  case Bit:
+  case F64:
+  case F32:
+  case D32:
+  case D64:
+  case Hex:
+  case Bin:
+  case Num:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
 int is_lit(token_e tok) {
   switch (tok) {
   case Null:
@@ -35,6 +61,31 @@ int is_lit(token_e tok) {
   case SQuote:
   case DQuote:
   case Num:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_low_bin(token_e tok) {
+  switch (tok) {
+  case Sub:
+  case Plus:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_high_bin(token_e tok) {
+  switch (tok) {
+  case Div:
+  case Mul:
+  case Mod:
     return 1;
     break;
   default:

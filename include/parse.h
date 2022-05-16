@@ -1,19 +1,22 @@
 #pragma once
 #include "ast.h"
 #include "lex.h"
-#include "lexeme.h"
-#include "option.h"
 
 typedef struct {
   ast_t *asts;
-  lexeme_t *lexemes;
   size_t cap;
   size_t len;
 } parser_source_t;
 
 parser_source_t parser_new();
-void parser_free(ast_t *ast);
-option_t parse_expr(lex_source_t *lexer, parser_source_t *parser);
-option_t parse_bin(lex_source_t *lexer, parser_source_t *parser);
+void parser_free(parser_source_t *parser);
+ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser);
 int parse_un(lex_source_t *lexer);
-option_t parse_lit(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_lit(lex_source_t *lexer, parser_source_t *parser);
+char *parser_get(ast_t *highest);
+void parser_print(parser_source_t *parser);
