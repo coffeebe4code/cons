@@ -63,6 +63,7 @@ void test_bin_op() {
   ASSERT((int)val->tok1.bin_left_expr->tok1.number.raw == 2);
   ASSERT(val->tok2.bin_op == Mul);
   ASSERT((int)val->tok3.bin_right_expr->tok1.number.raw == 2);
+
   parser_free(&parse);
 }
 

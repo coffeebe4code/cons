@@ -88,4 +88,42 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
   return left;
 }
 
+int ast_print(ast_t *ast, char *print) {
+  char *initial = print;
+  switch (ast->expr_kind) {
+  case Number:
+    print += snprintf(print, 1000, "%lu", ast->tok1.number.raw);
+    break;
+  case Identifier:
+    strncpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
+    print += strlen(ast->tok1.ident);
+    break;
+  case BinOp:
+    *print = '(';
+    print++;
+    print += ast_print(ast->tok1.bin_left_expr, print);
+    print += snprintf(print, 1000, " %d ", (int)(ast->tok2.bin_op));
+    print += ast_print(ast->tok3.bin_right_expr, print);
+    *print = ')';
+    print++;
+    break;
+  default: {
+    char *na = "( NA )";
+    strncpy(print, na, 6);
+    print += 6;
+    break;
+  }
+  }
+  return print - initial;
+}
+
+char *parser_get(ast_t *ast) {
+  char *buffer = calloc(1000, sizeof(char));
+  int len = ast_print(ast, buffer);
+  if (len == 0) {
+    strcpy(buffer, "NONE");
+  }
+  return buffer;
+}
+
 void parser_free(parser_source_t *parser) { free(parser->asts); }
