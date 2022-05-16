@@ -18,5 +18,5 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser);
 int parse_un(lex_source_t *lexer);
 ast_t *parse_lit(lex_source_t *lexer, parser_source_t *parser);
-char *parser_get(parser_source_t *parser);
+char *parser_get(ast_t *highest);
 void parser_print(parser_source_t *parser);

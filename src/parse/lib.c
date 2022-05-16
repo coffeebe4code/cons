@@ -22,7 +22,7 @@ parser_source_t parser_new() {
 
 ast_t *parser_add(parser_source_t *parser, ast_t ast) {
   check_size(parser);
-  void *ret = memcpy(&parser->asts[parser->len], &ast, sizeof(ast_t));
+  void *ret = memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
   return ret;
 }
 
@@ -57,60 +57,35 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
 }
 
 ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *val = parse_terminal(lexer, parser);
-  if (val != NULL) {
+  ast_t *left = parse_terminal(lexer, parser);
+  if (left != NULL) {
     while (is_low_bin(lex_peek(lexer).tok)) {
-      // do something.
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_high_bin(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      return parser_add(parser, combined);
     }
   }
-  return val;
+  return left;
 }
 
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *val = parse_terminal(lexer, parser);
-  if (val != NULL) {
+  ast_t *left = parse_terminal(lexer, parser);
+  if (left != NULL) {
     while (is_high_bin(lex_peek(lexer).tok)) {
-      // do something.
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_terminal(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      return parser_add(parser, combined);
     }
   }
-  return val;
-}
-
-void ast_print(ast_t *ast, char *print) {
-  switch (ast->expr_kind) {
-  case Number:
-    sprintf(print, "%f", (double)ast->tok1.number.raw);
-    print += ast->tok1.number.raw;
-    break;
-  case Identifier:
-    strncpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
-    print += strlen(ast->tok1.ident);
-    break;
-  case BinOp:
-    *print = '(';
-    print++;
-    ast_print(ast->tok1.bin_left_expr, print);
-    sprintf(print, "%f", (double)ast->tok2.bin_op);
-    print += ast->tok2.bin_op;
-    printf(" %d ", (int)(ast->tok2.bin_op));
-    ast_print(ast->tok3.bin_right_expr, print);
-    *print = ')';
-    print++;
-    break;
-  default: {
-    char *na = "( NA )";
-    strncpy(print, na, 6);
-    print += 6;
-    break;
-  }
-  }
-}
-
-char *parser_get(parser_source_t *parser) {
-  ast_t *first = &parser->asts[0];
-  char *print = calloc(10000000, sizeof(char));
-  ast_print(first, print);
-  return print;
+  return left;
 }
 
 void parser_free(parser_source_t *parser) { free(parser->asts); }

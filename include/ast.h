@@ -33,3 +33,9 @@ typedef struct ast_t {
 
 #define AST_Identifer(val)                                                     \
   (ast_t) { .expr_kind = Identifier, .tok1.ident = val }
+
+#define AST_BinOp(left, tok, right)                                            \
+  (ast_t) {                                                                    \
+    .expr_kind = BinOp, .tok1.bin_left_expr = left, .tok2.bin_op = tok,        \
+    .tok3.bin_right_expr = right                                               \
+  }
