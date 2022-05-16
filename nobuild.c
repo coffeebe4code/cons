@@ -1,4 +1,5 @@
 #define NOBUILD_IMPLEMENTATION
+#define CC "clang"
 #define CFLAGS "-Wall", "-Werror", "-std=c11", "-Wextra"
 #include "./nobuild.h"
 
