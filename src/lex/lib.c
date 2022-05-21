@@ -18,6 +18,10 @@ lexeme_t lex_peek(lex_source_t *lex) {
   if ((int)lex->peeked_token == -1) {
     lex->peeked_token = token_next(lex->curr_ptr, &len);
     lex->peeked_span = span_new(lex->curr_ptr, len);
+    if (lex->peeked_token == Wsp || lex->peeked_token == NewLine) {
+      lex_collect(lex);
+      return lex_peek(lex);
+    }
   }
   lexeme_t val = {.tok = lex->peeked_token, .span = lex->peeked_span};
   return val;

@@ -421,7 +421,8 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
                                 {"exe", required_argument, 0, 'e'},
                                 {"fetch", required_argument, 0, 'f'},
                                 {"release", no_argument, 0, 'r'},
-                                {"xtests", no_argument, 0, 'x'},
+                                {"skip-tests", no_argument, 0, 's'},
+                                {"remove-feature", required_argument, 0, 'x'},
                                 {"add", required_argument, 0, 'a'},
                                 {"debug", no_argument, 0, 'd'},
                                 {"pack", optional_argument, 0, 'p'},
@@ -533,6 +534,13 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     Cmd cmd = {.line = cstr_array_make(__VA_ARGS__, NULL)};                    \
     INFO("CMD: %s", cmd_show(cmd));                                            \
     cmd_run_sync(cmd);                                                         \
+  } while (0)
+
+#define REMOVE(feature)                                                        \
+  do {                                                                         \
+    RM(CONCAT("include/", feature, ".h"));                                     \
+    RM(CONCAT("src/", feature));                                               \
+    RM(CONCAT("tests/", feature, ".c"));                                       \
   } while (0)
 
 #define CLEAN()                                                                \
@@ -953,12 +961,12 @@ int handle_args(int argc, char **argv) {
   char opt_b[256] = {0};
   strcpy(this_prefix, PREFIX);
 
-  while ((opt_char = getopt_long(argc, argv, "t:ce:ia:f:b:drxp::", flags,
+  while ((opt_char = getopt_long(argc, argv, "t:ce:ia:f:b:drx:p::", flags,
                                  &option_index)) != -1) {
     found = 1;
     switch ((int)opt_char) {
     case 'x': {
-      skip_tests = 1;
+      REMOVE(optarg);
       break;
     }
     case 'c': {
