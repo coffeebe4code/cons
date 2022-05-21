@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");
-  DEPS("byte", "uni");
+  DEPS("byte");
+  DEPS("ir", "ast");
   DEPS("bytecode", "ast");
   BOOTSTRAP(argc, argv);
   return 0;

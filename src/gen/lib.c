@@ -1,5 +1,4 @@
 #include "../../include/gen.h"
-#define CFLAGS ""
 #include "stdlib.h"
 #include "string.h"
 

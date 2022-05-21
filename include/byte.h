@@ -1,9 +1,8 @@
 #pragma once
 #include "stdint.h"
-#include "uni.h"
 
 // typedefs
-typedef unsigned char byte_t;
+typedef uint8_t byte_t;
 
 typedef union byte2_t {
   uint16_t raw;
