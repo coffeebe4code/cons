@@ -95,8 +95,10 @@ int ast_print(ast_t *ast, char *print) {
     print += snprintf(print, 1000, "%lu", ast->tok1.number.raw);
     break;
   case Identifier:
-    strncpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
-    print += strlen(ast->tok1.ident);
+    print = memcpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
+    if (print != NULL) {
+      print += strlen(ast->tok1.ident);
+    }
     break;
   case BinOp:
     *print = '(';
@@ -109,8 +111,10 @@ int ast_print(ast_t *ast, char *print) {
     break;
   default: {
     char *na = "( NA )";
-    strncpy(print, na, 6);
-    print += 6;
+    print = memcpy(print, na, 6);
+    if (print != NULL) {
+      print += 6;
+    }
     break;
   }
   }

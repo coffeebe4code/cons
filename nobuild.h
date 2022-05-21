@@ -421,12 +421,14 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
                                 {"exe", required_argument, 0, 'e'},
                                 {"fetch", required_argument, 0, 'f'},
                                 {"release", no_argument, 0, 'r'},
+                                {"xtests", no_argument, 0, 'x'},
                                 {"add", required_argument, 0, 'a'},
                                 {"debug", no_argument, 0, 'd'},
                                 {"pack", optional_argument, 0, 'p'},
                                 {"total-internal", optional_argument, 0, 't'},
                                 {0}};
 
+static int skip_tests = 0;
 static result_t results = {0, 0};
 static Cstr_Array *features = NULL;
 static Cstr_Array libs = {.elems = 0, .count = 0};
@@ -951,10 +953,14 @@ int handle_args(int argc, char **argv) {
   char opt_b[256] = {0};
   strcpy(this_prefix, PREFIX);
 
-  while ((opt_char = getopt_long(argc, argv, "t:ce:ia:f:b:drp::", flags,
+  while ((opt_char = getopt_long(argc, argv, "t:ce:ia:f:b:drxp::", flags,
                                  &option_index)) != -1) {
     found = 1;
     switch ((int)opt_char) {
+    case 'x': {
+      skip_tests = 1;
+      break;
+    }
     case 'c': {
       c = 1;
       break;
@@ -1042,7 +1048,9 @@ int handle_args(int argc, char **argv) {
 
       obj_build(all.elems[i], local_comp);
       test_build(all.elems[i], local_comp, links);
-      EXEC_TESTS(all.elems[i]);
+      if (!skip_tests) {
+        EXEC_TESTS(all.elems[i]);
+      }
       links.elems = NULL;
       links.count = 0;
     }
@@ -1429,7 +1437,9 @@ void build(Cstr_Array comp_flags) {
     }
     obj_build(features[i].elems[0], comp_flags);
     test_build(features[i].elems[0], comp_flags, links);
-    EXEC_TESTS(features[i].elems[0]);
+    if (!skip_tests) {
+      EXEC_TESTS(features[i].elems[0]);
+    }
     links.elems = NULL;
     links.count = 0;
   }
