@@ -10,10 +10,11 @@ int main(int argc, char **argv) {
   FEATURE("lexeme");
   FEATURE("ast");
   FEATURE("parse");
+  FEATURE("bytecode");
+  FEATURE("vm");
   FEATURE("gen");
   FEATURE("arch");
   FEATURE("uni");
-  FEATURE("interpret");
   FEATURE("ir");
   FEATURE("byte");
   DEPS("lex", "lexeme", "token", "span");
@@ -21,6 +22,7 @@ int main(int argc, char **argv) {
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");
   DEPS("byte", "uni");
+  DEPS("bytecode", "ast");
   BOOTSTRAP(argc, argv);
   return 0;
 }
