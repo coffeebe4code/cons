@@ -1,10 +1,10 @@
 #pragma once
 
 typedef enum {
+  RET = 0,
   CONST,
   ADD,
   MUL,
   SUB,
   DIV,
-  RET,
 } bytecode_e;

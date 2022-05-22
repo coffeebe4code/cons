@@ -29,3 +29,5 @@ byte8_t convert_byte8_be(uint64_t b);
 #define BYTE2(val) convert_byte2_be(val)
 #define BYTE4(val) convert_byte4_be(val)
 #define BYTE8(val) convert_byte8_be(val)
+#define BYTE8_T_RAW(val)                                                       \
+  (byte8_t) { .raw = val }
