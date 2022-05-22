@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/gen.h"
-#include "../nobuild.h"
 #include "stdlib.h"
 
 DECLARE_MOCK(byte4_t, convert_byte4_be, uint32_t val);

@@ -1,6 +1,7 @@
 #ifndef NOBUILD_H_
 #define NOBUILD_H_
 
+#include "pthread.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -412,6 +413,10 @@ typedef struct {
   Cmd *elems;
   size_t count;
 } Cmd_Array;
+typedef struct {
+  Cstr *feature;
+  Cstr_Array *array;
+} thread_data_t;
 
 // statics
 static int test_result_status __attribute__((unused)) = 0;
@@ -464,6 +469,7 @@ void debug();
 void build(Cstr_Array comp_flags);
 void package(Cstr prefix);
 void obj_build(Cstr feature, Cstr_Array comp_flags);
+void obj_build_threaded(Cstr_Array comp_flags);
 void vend_build(Cstr vend, Cstr_Array comp_flags);
 void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
 void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
@@ -729,7 +735,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
   size_t __var_##name##_actual = 0;                                            \
   type name() { return (type)__var_##name[__var_##name##_inc++]; }
 #define DECLARE_MOCK_T(def, type) typedef struct def type;
-#define DECLARE_MOCK_E(def, type) typedef enum def type;
 #define MOCK(name, value) __var_##name[__var_##name##_actual++] = value;
 #define MOCK_T(type, value, name) type name = (type)value;
 #else
@@ -1056,8 +1061,8 @@ int handle_args(int argc, char **argv) {
       }
 
       obj_build(all.elems[i], local_comp);
-      test_build(all.elems[i], local_comp, links);
       if (!skip_tests) {
+        test_build(all.elems[i], local_comp, links);
         EXEC_TESTS(all.elems[i]);
       }
       links.elems = NULL;
@@ -1200,6 +1205,31 @@ void package(Cstr prefix) {
         CONCAT(prefix, "include/"));
   }
   INFO("Installed Successfully");
+}
+
+void *obj_build_ptr(void *input) {
+  thread_data_t *ptr = (thread_data_t *)input;
+  obj_build(*ptr->feature, *ptr->array);
+  return NULL;
+}
+
+void obj_build_threaded(Cstr_Array comp_flags) {
+  pthread_t *tid = malloc(sizeof(pthread_t) * feature_count);
+  Cstr_Array links = CSTRS();
+  for (size_t i = 0; i < feature_count; i++) {
+    for (size_t k = 1; k < features[i].count; k++) {
+      links = cstr_array_append(links, features[i].elems[k]);
+    }
+    thread_data_t *data = malloc(sizeof(thread_data_t));
+    data->feature = &features[i].elems[0];
+    data->array = &comp_flags;
+    pthread_create(&tid[i], NULL, obj_build_ptr, (void *)data);
+    links.elems = NULL;
+    links.count = 0;
+  }
+  for (size_t i = 0; i < feature_count; i++) {
+    pthread_join(tid[i], NULL);
+  }
 }
 
 void obj_build(Cstr feature, Cstr_Array comp_flags) {
@@ -1440,13 +1470,16 @@ void clone(Cstr name, Cstr repo) {
 
 void build(Cstr_Array comp_flags) {
   Cstr_Array links = CSTRS();
+  obj_build_threaded(comp_flags);
   for (size_t i = 0; i < feature_count; i++) {
     for (size_t k = 1; k < features[i].count; k++) {
       links = cstr_array_append(links, features[i].elems[k]);
     }
-    obj_build(features[i].elems[0], comp_flags);
-    test_build(features[i].elems[0], comp_flags, links);
+    // obj_build(features[i].elems[0], comp_flags);
+    // obj_build_threaded(features[i].elems[0], comp_flags);
+    // test_build(features[i].elems[0], comp_flags, links);
     if (!skip_tests) {
+      test_build(features[i].elems[0], comp_flags, links);
       EXEC_TESTS(features[i].elems[0]);
     }
     links.elems = NULL;

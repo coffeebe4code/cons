@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/parse.h"
-#include "../nobuild.h"
 
 DECLARE_MOCK(lexeme_t, lex_peek, lex_source_t *lex);
 DECLARE_MOCK(lexeme_t, lex_collect, lex_source_t *lex);

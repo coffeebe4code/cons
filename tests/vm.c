@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/vm.h"
-#include "../nobuild.h"
 
 DECLARE_MOCK_E({RET = 0 COMMA CONST COMMA ADD COMMA MUL COMMA DIV COMMA SUB},
                bytecode_e);

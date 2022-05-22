@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/lex.h"
-#include "../nobuild.h"
 
 char *full_string = "#import whatever";
 DECLARE_MOCK(span_t, span_new, char *data COMMA_D size_t len);

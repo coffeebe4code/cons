@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/uni.h"
-#include "../nobuild.h"
 
 int main() {
   DESCRIBE("uni");
