@@ -13,6 +13,11 @@ typedef enum {
 
 typedef struct {
   error_type_e err_kind;
+  union {
+    char *file_name;
+    char *message;
+  } first;
+  int line_no;
 } error_t;
 
 #define ERR_FORMAT(STRING_INDEX, FIRST_TO_CHECK)                               \

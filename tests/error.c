@@ -5,9 +5,7 @@
 
 void test_errors() {
   error_t err = {0};
-  ERROR(&err, "thing");
-  ERROR_PTR(&err, "additional message", 5, "here x <=");
-  ERROR_PTR(&err, "additional message", 0, "x <= here");
+  ERROR_PTR(&err, "additional message", 5, "here x.");
   ASSERT(1 == 1);
 }
 

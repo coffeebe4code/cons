@@ -14,16 +14,20 @@ void BUILDER(FILE *stream, char *tag, char *kind, char *fmt, va_list args) {
 }
 
 void POINTER(FILE *stream, char *source_message, int pointer_loc, char *tag,
-             char *kind) {
+             char *kind, char *fmt, va_list args) {
   int tag_len = strlen(tag);
   int kind_len = strlen(kind);
-  int empty_len = tag_len + kind_len + pointer_loc + 7;
+  int empty_len = tag_len + kind_len + 5;
   char *empty = calloc(empty_len, sizeof(char));
-  memset(empty, ' ', empty_len - 1);
-  fprintf(stream, "%s^", empty);
+  memset(empty, ' ', empty_len);
+  fprintf(stream, "%s| ", empty);
+  char *empty2 = calloc(empty_len + pointer_loc, sizeof(char));
+  memset(empty2, ' ', empty_len + pointer_loc + 2);
+  vfprintf(stream, fmt, args);
   fprintf(stream, "\n");
-  fprintf(stream, "%s%s", empty, source_message);
-  fprintf(stream, "\n");
+  fprintf(stream, "%s^ %s\n", empty2, source_message);
+  free(empty);
+  free(empty2);
 }
 
 void ERROR(error_t *err, char *fmt, ...) {
@@ -36,7 +40,9 @@ void ERROR(error_t *err, char *fmt, ...) {
 void ERROR_PTR(error_t *err, char *message, int pointer_loc, char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  BUILDER(stderr, "ERROR", error_kinds[err->err_kind], fmt, args);
-  POINTER(stderr, message, pointer_loc, "ERROR", error_kinds[err->err_kind]);
+  fprintf(stderr, "[ERROR] %s => file: %s => line: %d\n",
+          error_kinds[err->err_kind], err->first.file_name, err->line_no);
+  POINTER(stderr, message, pointer_loc, "ERROR", error_kinds[err->err_kind],
+          fmt, args);
   va_end(args);
 }
