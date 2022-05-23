@@ -17,6 +17,7 @@ int main(int argc, char **argv) {
   FEATURE("uni");
   FEATURE("ir");
   FEATURE("byte");
+  FEATURE("error");
   DEPS("lex", "lexeme", "token", "span");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
