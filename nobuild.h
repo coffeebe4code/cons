@@ -13,7 +13,6 @@
 typedef FILE *Fd;
 
 #ifndef _WIN32
-#define _POSIX_C_SOURCE 200809L
 #include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
