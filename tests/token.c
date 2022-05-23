@@ -1,7 +1,7 @@
-#define NOBUILD_IMPLEMENTATION
+#define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/token.h"
-#include "../nobuild.h"
 
 #define EASY_LENGTH 53
 static token_e easy_list[] = {
