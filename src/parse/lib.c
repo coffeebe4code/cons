@@ -2,21 +2,31 @@
 #include "../../include/lex.h"
 #include "../../include/lexeme.h"
 #include "../../include/parse.h"
+#include "inttypes.h"
+#include "stdint.h"
 #include "stdio.h"
 #include "string.h"
+
+void parse_exit(void *ptr) {
+  if (ptr == NULL) {
+    puts("[ERROR] | failure to allocate enough memory");
+    puts("          in parser");
+    exit(1);
+  }
+}
 
 void check_size(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
     parser->cap <<= 2;
     void *ret = realloc(parser->asts, parser->cap);
-    if (ret == NULL) {
-    }
+    parse_exit(ret);
   }
 }
 
 parser_source_t parser_new() {
   parser_source_t val = {.len = 0, .cap = 100, .asts = NULL};
   val.asts = calloc(sizeof(ast_t), 100);
+  parse_exit(val.asts);
   return val;
 }
 
@@ -91,9 +101,9 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
 int ast_print(ast_t *ast, char *print) {
   char *initial = print;
   switch (ast->expr_kind) {
-  case Number:
-    print += snprintf(print, 1000, "%llu", ast->tok1.number.raw);
-    break;
+  case Number: {
+    print += snprintf(print, 1000, "%" PRIu64, ast->tok1.number.raw);
+  } break;
   case Identifier:
     print = memcpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
     if (print != NULL) {

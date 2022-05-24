@@ -2,10 +2,19 @@
 #include "stdlib.h"
 #include "string.h"
 
+void gen_exit(void *ptr) {
+  if (ptr == NULL) {
+    puts("[ERROR] | failure to allocate enough memory");
+    puts("          in code generation");
+    exit(1);
+  }
+}
+
 gen_source_t gen_new() {
   gen_source_t val = {
       .len = 0, .cap = 100, .binary = NULL, .current_pos = NULL};
   val.binary = calloc(sizeof(unsigned char), 100);
+  gen_exit(val.binary);
   val.current_pos = val.binary;
   return val;
 }
@@ -14,6 +23,7 @@ void check_size(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
     gen->cap <<= 2;
     gen->binary = realloc(gen->binary, gen->cap);
+    gen_exit(gen->binary);
   }
   gen->len += size;
 }
