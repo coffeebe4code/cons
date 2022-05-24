@@ -92,7 +92,7 @@ int ast_print(ast_t *ast, char *print) {
   char *initial = print;
   switch (ast->expr_kind) {
   case Number:
-    print += snprintf(print, 1000, "%lu", ast->tok1.number.raw);
+    print += snprintf(print, 1000, "%llu", ast->tok1.number.raw);
     break;
   case Identifier:
     print = memcpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
