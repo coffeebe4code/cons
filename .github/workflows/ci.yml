@@ -1,0 +1,25 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build-linux-gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: build
+        run: |
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          ./nobuild --release
+  build-macos:
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: build
+        run: |
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          ./nobuild --release
