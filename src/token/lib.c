@@ -116,7 +116,7 @@ static inline token_e tokenize_number(char *data, int *len) {
 static inline token_e tokenize_char(char *data, int *len) {
   int cont = 1;
   token_e tok = Error;
-  while (*++data != '\0' && cont) {
+  while (cont && *++data != '\0') {
     switch (*data) {
     case '\\':
       (*len)++;

@@ -38,6 +38,8 @@ void test_terminal() {
   ast_t *val2 = parse_ident(&lex2, &parse2);
   ASSERT(val2->expr_kind == Identifier);
   ASSERT(strcmp(val2->tok1.ident, input2));
+  // TODO:: handle little mallocs
+  free(val2->tok1.ident);
   parser_free(&parse2);
 }
 
