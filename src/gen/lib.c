@@ -6,6 +6,10 @@ gen_source_t gen_new() {
   gen_source_t val = {
       .len = 0, .cap = 100, .binary = NULL, .current_pos = NULL};
   val.binary = calloc(sizeof(unsigned char), 100);
+  if (val.binary == NULL) {
+    puts("Intialization issue, failure to alloc code gen binary");
+    exit(1);
+  }
   val.current_pos = val.binary;
   return val;
 }
