@@ -1,7 +1,6 @@
 #define NOBUILD_IMPLEMENTATION
 #define CC "clang"
-#define CFLAGS                                                                 \
-  "-Wall", "-Werror", "-std=c11", "-Wextra", "-fsanitize=undefined,address"
+#define CFLAGS "-Wall", "-Werror", "-std=c11", "-Wextra"
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {
