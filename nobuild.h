@@ -582,13 +582,15 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define RESULTS()                                                              \
   do {                                                                         \
-    update_results();                                                          \
-    INFO("OKAY: tests passed %d", results.passed_total);                       \
-    INFO("FAIL: tests failed %d", results.failure_total);                      \
-    INFO(ANSI_COLOR_CYAN "TOTAL:" ANSI_COLOR_RESET " tests ran %d",            \
-         results.failure_total + results.passed_total);                        \
-    if (results.failure_total > 0) {                                           \
-      exit(results.failure_total);                                             \
+    if (skip_tests == 0) {                                                     \
+      update_results();                                                        \
+      INFO("OKAY: tests passed %d", results.passed_total);                     \
+      INFO("FAIL: tests failed %d", results.failure_total);                    \
+      INFO(ANSI_COLOR_CYAN "TOTAL:" ANSI_COLOR_RESET " tests ran %d",          \
+           results.failure_total + results.passed_total);                      \
+      if (results.failure_total > 0) {                                         \
+        exit(results.failure_total);                                           \
+      }                                                                        \
     }                                                                          \
   } while (0)
 
