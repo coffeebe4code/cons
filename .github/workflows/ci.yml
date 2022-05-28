@@ -7,14 +7,14 @@ on:
     branches:
       - main
 jobs:
-  build-linux-gcc:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: build
         run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
-          ./nobuild --release
+          ./nobuild -d
   build-macos:
     runs-on: macOS-latest
     steps:
@@ -22,4 +22,12 @@ jobs:
       - name: build
         run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
-          ./nobuild --release
+          ./nobuild -d
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: release
+        run: |
+          clang -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          ./nobuild -r -s

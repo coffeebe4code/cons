@@ -1,10 +1,10 @@
 #define MORE_COFFEE
 #define WITH_MOCKING
+#include "../barista.h"
 #include "../include/cli.h"
-#include "../nobuild.h"
 
 int main() {
-  DESCRIBE("cli.h");
+  DESCRIBE("cli");
   SHOULDB("work", { ASSERT(1 == 1); });
   RETURN();
 }

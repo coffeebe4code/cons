@@ -1,7 +1,6 @@
 #define NOBUILD_IMPLEMENTATION
 #define CC "clang"
-#define CFLAGS                                                                 \
-  "-Wall", "-Werror", "-std=c11", "-Wextra", "-fsanitize=undefined,address"
+#define CFLAGS "-Wall", "-Werror", "-std=c11", "-Wextra"
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {
@@ -20,6 +19,7 @@ int main(int argc, char **argv) {
   FEATURE("byte");
   FEATURE("error");
   FEATURE("cli");
+  EXE("cons-repl", "cli");
   DEPS("lex", "lexeme", "token", "span");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
