@@ -1,4 +1,4 @@
-#include "../../include/bytecode.h"
+#include "../../include/pros.h"
 #include "../../include/vm.h"
 
 // macros
@@ -31,7 +31,7 @@ instr_result_e vm_run(vm_t vm) {
   int cont = 1;
   while (cont) {
     instr = READ_IP();
-    switch ((bytecode_e)instr.raw) {
+    switch ((pro_op_e)instr.raw) {
     case RET: {
       cont = 0;
       break;

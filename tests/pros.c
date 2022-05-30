@@ -1,10 +1,10 @@
 #define MORE_COFFEE
 #define WITH_MOCKING
 #include "../barista.h"
-#include "../include/bytecode.h"
+#include "../include/pros.h"
 
 int main() {
-  DESCRIBE("bytecode");
+  DESCRIBE("pros");
   SHOULDB("work", { ASSERT(1 == 1); });
   RETURN();
 }

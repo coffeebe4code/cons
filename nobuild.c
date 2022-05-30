@@ -10,7 +10,6 @@ int main(int argc, char **argv) {
   FEATURE("lexeme");
   FEATURE("ast");
   FEATURE("parse");
-  FEATURE("bytecode");
   FEATURE("vm");
   FEATURE("gen");
   FEATURE("arch");
@@ -19,13 +18,13 @@ int main(int argc, char **argv) {
   FEATURE("byte");
   FEATURE("error");
   FEATURE("cli");
+  FEATURE("pros");
   EXE("cons-repl", "cli");
   DEPS("lex", "lexeme", "token", "span");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");
-  DEPS("ir", "ast");
-  DEPS("bytecode", "ast");
+  DEPS("ir", "ast", "pros");
   BOOTSTRAP(argc, argv);
   return 0;
 }
