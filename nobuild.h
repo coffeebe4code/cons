@@ -185,7 +185,7 @@ static int postpone_noopt(int argc, char *const argv[], int index) {
 }
 static int _getopt_(int argc, char *const argv[], const char *optstring,
                     const struct option *longopts, int *longindex) {
-  int len = 10;
+  int len = 11;
   while (1) {
     int c;
     const char *optptr = 0;
@@ -375,7 +375,7 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
 #define RCOMP "-O3"
 #endif
 #ifndef DCOMP
-#define DCOMP "-g", "-O0"
+#define DCOMP "-fsanitize=undefined,address", "-g", "-O0"
 #endif
 #ifndef LD
 #define LD "ld"
@@ -582,13 +582,15 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define RESULTS()                                                              \
   do {                                                                         \
-    update_results();                                                          \
-    INFO("OKAY: tests passed %d", results.passed_total);                       \
-    INFO("FAIL: tests failed %d", results.failure_total);                      \
-    INFO(ANSI_COLOR_CYAN "TOTAL:" ANSI_COLOR_RESET " tests ran %d",            \
-         results.failure_total + results.passed_total);                        \
-    if (results.failure_total > 0) {                                           \
-      exit(results.failure_total);                                             \
+    if (skip_tests == 0) {                                                     \
+      update_results();                                                        \
+      INFO("OKAY: tests passed %d", results.passed_total);                     \
+      INFO("FAIL: tests failed %d", results.failure_total);                    \
+      INFO(ANSI_COLOR_CYAN "TOTAL:" ANSI_COLOR_RESET " tests ran %d",          \
+           results.failure_total + results.passed_total);                      \
+      if (results.failure_total > 0) {                                         \
+        exit(results.failure_total);                                           \
+      }                                                                        \
     }                                                                          \
   } while (0)
 
@@ -966,10 +968,14 @@ int handle_args(int argc, char **argv) {
   char opt_b[256] = {0};
   strcpy(this_prefix, PREFIX);
 
-  while ((opt_char = getopt_long(argc, argv, "t:ce:ia:f:b:drx:p::", flags,
+  while ((opt_char = getopt_long(argc, argv, "t:ce:sia:f:b:drx:p::", flags,
                                  &option_index)) != -1) {
     found = 1;
     switch ((int)opt_char) {
+    case 's': {
+      skip_tests = 1;
+      break;
+    }
     case 'x': {
       REMOVE(optarg);
       break;
@@ -1060,7 +1066,7 @@ int handle_args(int argc, char **argv) {
       }
 
       obj_build(all.elems[i], local_comp);
-      if (!skip_tests) {
+      if (skip_tests == 0) {
         test_build(all.elems[i], local_comp, links);
         EXEC_TESTS(all.elems[i]);
       }
@@ -1477,7 +1483,7 @@ void build(Cstr_Array comp_flags) {
     // obj_build(features[i].elems[0], comp_flags);
     // obj_build_threaded(features[i].elems[0], comp_flags);
     // test_build(features[i].elems[0], comp_flags, links);
-    if (!skip_tests) {
+    if (skip_tests == 0) {
       test_build(features[i].elems[0], comp_flags, links);
       EXEC_TESTS(features[i].elems[0]);
     }
