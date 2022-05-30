@@ -10,6 +10,7 @@ typedef struct {
   byte8_t stack[VM_MAX_STACK];
   byte8_t *sp;
   byte8_t *consts;
+  byte8_t *vars;
 } vm_t;
 
 typedef struct {
@@ -20,6 +21,6 @@ typedef struct {
 
 typedef enum { OK, RUNTIME } instr_result_e;
 
-vm_t vm_new(byte8_t *start, byte8_t *consts);
+vm_t vm_new(byte8_t *start, byte8_t *consts, byte8_t *vars);
 instr_result_e vm_run(vm_t vm);
 void vm_free();
