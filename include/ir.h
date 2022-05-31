@@ -1,20 +1,23 @@
 #pragma once
 #include "ast.h"
+#include "byte.h"
 #include "pros.h"
 #include "stdint.h"
 #include "stdio.h"
 
 typedef struct {
-
-} pro_rets;
+  pro_op_e op;
+  size_t gen;
+} ir_t;
 
 typedef struct {
 
-} pro_source_t;
+} ir_source_t;
 
-pro_source_t pro_new();
-void pro_begin(pro_source_t *pro, ast_t *main);
-void pro_add(pro_source_t *pro, ast_t *next);
+ir_source_t ir_new();
+void ir_begin(ir_source_t *ir, ast_t *main);
+void ir_add(ir_source_t *ir, ast_t *next);
+void ir_clean(ir_source_t *ir);
+void ir_free(ir_source_t *ir);
 
-void pro_clean(pro_source_t *pro);
-void pro_iconst64(pro_source_t *source, uint64_t val);
+void ir_iiadd64(ir_source_t *source, byte8_t left, byte8_t right);
