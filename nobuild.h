@@ -423,7 +423,6 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
                                 {"init", no_argument, 0, 'i'},
                                 {"clean", no_argument, 0, 'c'},
                                 {"exe", required_argument, 0, 'e'},
-                                {"fetch", required_argument, 0, 'f'},
                                 {"release", no_argument, 0, 'r'},
                                 {"skip-tests", no_argument, 0, 's'},
                                 {"remove-feature", required_argument, 0, 'x'},
@@ -460,16 +459,10 @@ Fd fd_open_for_read(Cstr path, int exit);
 Fd fd_open_for_write(Cstr path);
 void fd_close(Fd fd);
 void release();
-void pull(Cstr name, Cstr sha);
-void build_vend(Cstr name, Cstr nobuild_flag);
-void handle_vend(Cstr nobuild_flag);
-void clone(Cstr name, Cstr repo);
 void debug();
 void build(Cstr_Array comp_flags);
-void package(Cstr prefix);
 void obj_build(Cstr feature, Cstr_Array comp_flags);
 void obj_build_threaded(Cstr_Array comp_flags);
-void vend_build(Cstr vend, Cstr_Array comp_flags);
 void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
 void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
 Cstr_Array deps_get_lifted(Cstr file, Cstr_Array processed);
@@ -964,11 +957,10 @@ int handle_args(int argc, char **argv) {
   int b = 0;
   int r = 0;
   int d = 0;
-  int p = 0;
   char opt_b[256] = {0};
   strcpy(this_prefix, PREFIX);
 
-  while ((opt_char = getopt_long(argc, argv, "t:ce:sia:f:b:drx:p::", flags,
+  while ((opt_char = getopt_long(argc, argv, "t:ce:sia:b:drx::", flags,
                                  &option_index)) != -1) {
     found = 1;
     switch ((int)opt_char) {
@@ -1012,8 +1004,6 @@ int handle_args(int argc, char **argv) {
     case 'f': {
       for (size_t i = 0; i < vend_count; i++) {
         if (strcmp(vends[i].elems[0], optarg) == 0) {
-          pull(vends[i].elems[0], vends[i].elems[2]);
-          build_vend(vends[i].elems[0], "-d");
           Fd fd =
               fd_open_for_write(CONCAT("target/nobuild/", vends[i].elems[0]));
           fprintf(fd, "%s", vends[i].elems[2]);
@@ -1033,11 +1023,9 @@ int handle_args(int argc, char **argv) {
         }
       }
       strcpy(this_prefix, optarg);
-      p = 1;
       break;
     }
     case 't': {
-      handle_vend("-d");
       break;
     }
     default: {
@@ -1050,26 +1038,21 @@ int handle_args(int argc, char **argv) {
     create_folders();
   }
   if (b) {
-    handle_vend("-d");
     Cstr parsed = parse_feature_from_path(opt_b);
-    Cstr_Array all = CSTRS();
-    all = incremental_build(parsed, all);
     Cstr_Array local_comp = cstr_array_make(DCOMP, NULL);
     Cstr_Array links = CSTRS();
     for (size_t i = 0; i < all.count; i++) {
       for (size_t j = 0; j < feature_count; j++) {
-        if (strcmp(features[j].elems[0], all.elems[i]) == 0) {
+        if (strcmp(parsed, features[j]) == 0) {
           for (size_t k = 1; k < features[j].count; k++) {
             links = cstr_array_append(links, features[j].elems[k]);
           }
         }
       }
 
-      obj_build(all.elems[i], local_comp);
-      if (skip_tests == 0) {
-        test_build(all.elems[i], local_comp, links);
-        EXEC_TESTS(all.elems[i]);
-      }
+      obj_build(parsed, local_comp);
+      test_build(parsed, local_comp, links);
+      EXEC_TESTS(all.elems[i]);
       links.elems = NULL;
       links.count = 0;
     }
@@ -1087,18 +1070,12 @@ int handle_args(int argc, char **argv) {
   }
   if (r) {
     create_folders();
-    handle_vend("-r");
     release();
   }
   if (d) {
     create_folders();
-    handle_vend("-d");
     debug();
   }
-  if (p) {
-    package(this_prefix);
-  }
-
   if (found == 0) {
     WARN("No arguments passed to nobuild");
     WARN("Building all features");
@@ -1383,10 +1360,7 @@ void exe_build(Cstr exe, Cstr_Array comp_flags, Cstr_Array exe_deps) {
   cmd_run_sync(cmd);
 }
 
-void release() {
-  handle_vend("-r");
-  build(cstr_array_make(RCOMP, NULL));
-}
+void release() { build(cstr_array_make(RCOMP, NULL)); }
 
 Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
   processed = cstr_array_append(processed, parsed);
@@ -1400,78 +1374,7 @@ Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
   return processed;
 }
 
-void debug() {
-  handle_vend("-d");
-  build(cstr_array_make(DCOMP, NULL));
-}
-
-void pull(Cstr name, Cstr sha) {
-  INFO("updating vend .. %s", name);
-  if (chdir(CONCAT("vend/", name)) != 0) {
-    PANIC("Failed to change directory %s", CONCAT("vend/", name));
-  }
-  CMD("git", "fetch");
-  CMD("git", "checkout", sha);
-  if (chdir("../..") != 0) {
-    PANIC("Failed to change directory %s", "../..");
-  }
-}
-
-void build_vend(Cstr name, Cstr nobuild_flag) {
-  if (chdir(CONCAT("vend/", name)) != 0) {
-    PANIC("Failed to change directory %s", CONCAT("vend/", name));
-  }
-  CMD(CC, "-O3", "./nobuild.c", "-o", "./nobuild");
-  CMD("./nobuild", nobuild_flag, "-p", this_prefix);
-  if (chdir("../..") != 0) {
-    PANIC("Failed to change directory %s", "../..");
-  }
-}
-
-void handle_vend(Cstr nobuild_flag) {
-  for (size_t i = 0; i < vend_count; i++) {
-    Fd fp = fd_open_for_read(CONCAT("target/nobuild/", vends[i].elems[0]), 0);
-    if (fp == NULL) {
-      DIR *dir = opendir(CONCAT("vend/", vends[i].elems[0]));
-      if (dir == NULL) {
-        clone(vends[i].elems[0], vends[i].elems[1]);
-      }
-      pull(vends[i].elems[0], vends[i].elems[2]);
-      build_vend(vends[i].elems[0], nobuild_flag);
-      Fd fd = fd_open_for_write(CONCAT("target/nobuild/", vends[i].elems[0]));
-      fprintf(fd, "%s", vends[i].elems[2]);
-      fclose(fd);
-    }
-    fp = fd_open_for_read(CONCAT("target/nobuild/", vends[i].elems[0]), 0);
-    char sha[256];
-
-    if (fscanf((FILE *)fp, "%s", sha) == 0) {
-      PANIC("Couldn't extract sha from build cache");
-    }
-
-    if (strcmp(vends[i].elems[2], sha) != 0) {
-      DIR *dir = opendir(CONCAT("vend/", vends[i].elems[0]));
-      if (dir == NULL) {
-        clone(vends[i].elems[0], vends[i].elems[1]);
-      }
-      pull(vends[i].elems[0], vends[i].elems[2]);
-      build_vend(vends[i].elems[0], nobuild_flag);
-      Fd fd = fd_open_for_write(CONCAT("target/nobuild/", vends[i].elems[0]));
-      fprintf(fd, "%s", vends[i].elems[2]);
-      fclose(fd);
-    }
-  }
-}
-
-void clone(Cstr name, Cstr repo) {
-  if (chdir("vend/") != 0) {
-    PANIC("Failed to change directory %s", "vend/");
-  }
-  CMD("git", "clone", repo, name);
-  if (chdir("..") != 0) {
-    PANIC("Failed to change directory %s", "../..");
-  }
-}
+void debug() { build(cstr_array_make(DCOMP, NULL)); }
 
 void build(Cstr_Array comp_flags) {
   Cstr_Array links = CSTRS();
