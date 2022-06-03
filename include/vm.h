@@ -1,6 +1,6 @@
 #pragma once
 #include "byte.h"
-#include "gen.h"
+#include "stdio.h"
 
 #define VM_MAX_STACK 1024
 

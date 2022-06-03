@@ -1041,20 +1041,18 @@ int handle_args(int argc, char **argv) {
     Cstr parsed = parse_feature_from_path(opt_b);
     Cstr_Array local_comp = cstr_array_make(DCOMP, NULL);
     Cstr_Array links = CSTRS();
-    for (size_t i = 0; i < all.count; i++) {
-      for (size_t j = 0; j < feature_count; j++) {
-        if (strcmp(parsed, features[j]) == 0) {
-          for (size_t k = 1; k < features[j].count; k++) {
-            links = cstr_array_append(links, features[j].elems[k]);
-          }
+    for (size_t j = 0; j < feature_count; j++) {
+      if (strcmp(parsed, features[j].elems[0]) == 0) {
+        for (size_t k = 1; k < features[j].count; k++) {
+          links = cstr_array_append(links, features[j].elems[k]);
         }
-      }
 
-      obj_build(parsed, local_comp);
-      test_build(parsed, local_comp, links);
-      EXEC_TESTS(all.elems[i]);
-      links.elems = NULL;
-      links.count = 0;
+        obj_build(parsed, local_comp);
+        test_build(parsed, local_comp, links);
+        EXEC_TESTS(parsed);
+        links.elems = NULL;
+        links.count = 0;
+      }
     }
     Cstr_Array exe_deps = CSTRS();
     for (size_t i = 0; i < exe_count; i++) {
@@ -1402,19 +1400,7 @@ void build(Cstr_Array comp_flags) {
     exe_deps.elems = NULL;
     exe_deps.count = 0;
   }
-  struct rusage r;
-  struct rusage r2;
-  getrusage(RUSAGE_SELF, &r);
-  main_sutime += r.ru_utime.tv_usec;
-  main_utime += r.ru_utime.tv_sec;
-  getrusage(RUSAGE_CHILDREN, &r2);
-  cmd_sutime += r2.ru_utime.tv_usec;
-  cmd_utime += r2.ru_utime.tv_sec;
 
-  INFO("NOBUILD took ... %ld usec",
-       (long int)(main_utime * 10000000L + main_sutime));
-  INFO("CMDS took ... %ld usec",
-       (long int)(cmd_utime * 10000000L + cmd_sutime));
   RESULTS();
 }
 
