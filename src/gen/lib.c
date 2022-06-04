@@ -19,6 +19,7 @@ gen_source_t gen_new() {
   return val;
 }
 
+// BUG:: size and realloc.
 void check_size(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
     gen->cap <<= 2;
@@ -28,6 +29,7 @@ void check_size(gen_source_t *gen, uint8_t size) {
   gen->len += size;
 }
 
+// BUG:: size and realloc.
 void gen_add8(gen_source_t *gen, byte_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
@@ -35,6 +37,7 @@ void gen_add8(gen_source_t *gen, byte_t value) {
   gen->current_pos += size;
 }
 
+// BUG:: size and realloc.
 void gen_add16(gen_source_t *gen, byte2_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
@@ -42,6 +45,7 @@ void gen_add16(gen_source_t *gen, byte2_t value) {
   gen->current_pos += size;
 }
 
+// BUG:: size and realloc.
 void gen_add32(gen_source_t *gen, byte4_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
@@ -49,6 +53,7 @@ void gen_add32(gen_source_t *gen, byte4_t value) {
   gen->current_pos += size;
 }
 
+// BUG:: size and realloc.
 void gen_add64(gen_source_t *gen, byte8_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
