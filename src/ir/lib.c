@@ -41,7 +41,7 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
   while (cont) {
     switch (curr->expr_kind) {
     case Number: {
-      ir_t *con = ir_const64(ir, curr->tok1.number);
+      ir_t *con __attribute__((unused)) = ir_const64(ir, curr->tok1.number);
       break;
     }
     default:
@@ -57,6 +57,7 @@ ir_t *ir_const64(ir_source_t *source, byte8_t left) {
   gen_add64(&source->constants, left);
   ir_t val = (ir_t){.op = CONST, .idx = 0, .gen = 0};
   ir_insert(source, val);
+  return &source->irs[source->len - 1];
 }
 ir_t *ir_add64(ir_source_t *source, byte8_t left, byte8_t right);
 ir_t *ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
