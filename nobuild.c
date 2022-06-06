@@ -5,6 +5,7 @@
 
 int main(int argc, char **argv) {
   FEATURE("token");
+  FEATURE("list");
   FEATURE("span");
   FEATURE("lex");
   FEATURE("lexeme");
