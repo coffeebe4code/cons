@@ -9,9 +9,8 @@ void ir_exit() {
 }
 
 ir_source_t ir_new() {
-  ir_source_t val = {.constants = byte8_l_new(),
-                     .variables = byte8_l_new(),
-                     .irs = ir_l_new()};
+  ir_source_t val = {
+      .constants = byte8s_new(), .variables = byte8s_new(), .irs = irs_new()};
   if (val.constants.data == NULL || val.variables.data == NULL ||
       val.irs.data == NULL) {
     ir_exit();
@@ -26,10 +25,6 @@ void ir_recurse(ir_source_t *ir, ast_t *recurse) {
     break;
   }
   case BinOp: {
-    ir_recurse(ir, recurse->tok1.bin_left_expr);
-    ir_recurse(ir, recurse->tok3.bin_right_expr);
-    ir_recurse(ir, recurse->tok2.bin_op);
-
     break;
   }
   default:
@@ -51,20 +46,16 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
     }
   }
 }
-void ir_add(ir_source_t *source, ast_t *next);
-void ir_clean(ir_source_t *source);
-void ir_free(ir_source_t *source);
 
 void ir_const64(ir_source_t *source, byte8_t left) {
-  int insert = byte8_l_add(&source->constants, left);
+  int insert = byte8s_add(&source->constants, left);
   ir_t val = (ir_t){.op = CONST, .idx = 0, .gen = 0};
-  insert += ir_l_add(&source->irs, val);
+  insert += irs_add(&source->irs, val);
   if (insert) {
     ir_exit();
   }
 }
 
-void ir_add64(ir_source_t *source, byte8_t);
 void ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_sub64(ir_source_t *source, byte8_t left, byte8_t right);

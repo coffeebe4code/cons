@@ -9,22 +9,25 @@
 
 typedef enum { BPlain, BIf, BRet, BFirst } block_e;
 
+LIST_MAKE(size_t, vars, 100);
+LIST_MAKE(ir_t, irs, 100);
+LIST_MAKE(byte8_t, byte8s, 100);
+
+typedef struct {
+  size_t label;
+  block_e kind;
+  vars_t *vars_idx;
+} block_t;
+
 typedef struct {
   pro_op_e op;
-  size_t idx;
-  size_t gen;
 } ir_t;
 
-LIST_MAKE(ir_t, ir_l, 100);
-LIST_MAKE(byte8_t, byte8_l, 100);
-
 typedef struct {
-  byte8_l_t constants;
-  byte8_l_t variables;
-  ir_l_t irs;
+  byte8s_t constants;
+  byte8s_t variables;
+  irs_t irs;
 } ir_source_t;
-
-LIST_MAKE(ir_t, ir_list, 100);
 
 ir_source_t ir_new();
 void ir_begin(ir_source_t *source, ast_t *main);
