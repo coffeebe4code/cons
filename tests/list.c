@@ -3,7 +3,8 @@
 #include "../barista.h"
 #include "../include/list.h"
 
-LIST_MAKE(char, cstrs, 2);
+LIST_DECL(char, cstrs);
+LIST_USE(char, cstrs, 2);
 
 void test_list() {
   cstrs_l val = cstrs_new();

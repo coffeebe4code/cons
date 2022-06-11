@@ -1,7 +1,9 @@
 #include "../../include/gen.h"
 #include "../../include/ir.h"
+#include "../../include/list.h"
 #include "string.h"
 
+LIST_USE(block_t, blocks, 10);
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
   puts("          in ir generation");
@@ -9,8 +11,8 @@ void ir_exit() {
 }
 
 ir_source_t ir_new() {
-  ir_source_t val = {.blocks = NULL};
-  if (val.blocks == NULL) {
+  ir_source_t val = {.blocks = blocks_new()};
+  if (val.blocks.data == NULL) {
     ir_exit();
   }
   return val;

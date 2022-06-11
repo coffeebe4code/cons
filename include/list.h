@@ -5,13 +5,14 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define LIST_MAKE(type, name, capacity)                                        \
+#define LIST_DECL(type, name)                                                  \
   typedef struct {                                                             \
     size_t len;                                                                \
     size_t cap;                                                                \
     type *data;                                                                \
-  } name##_l;                                                                  \
-                                                                               \
+  } name##_l;
+
+#define LIST_USE(type, name, capacity)                                         \
   name##_l name##_new() {                                                      \
     name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
     val.data = calloc(sizeof(type), capacity);                                 \

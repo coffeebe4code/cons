@@ -6,9 +6,9 @@
 #include "list.h"
 #include "pros.h"
 
-// LIST_MAKE(block_t, blocks, 100);
+LIST_DECL(block_t, blocks);
 typedef struct {
-  block_t *blocks;
+  blocks_l blocks;
 } ir_source_t;
 
 ir_source_t ir_new();
