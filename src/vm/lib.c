@@ -40,6 +40,10 @@ instr_result_e vm_run(vm_t vm) {
       cont = 0;
       break;
     }
+    case RetVoid: {
+      cont = 0;
+      break;
+    }
     case f64Const: {
       PUSH(READ_CONST());
       break;
@@ -61,6 +65,7 @@ instr_result_e vm_run(vm_t vm) {
       break;
     }
     default: {
+      cont = 0;
       break;
     }
     }
