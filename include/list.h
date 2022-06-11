@@ -1,6 +1,7 @@
 #pragma once
 #include "stdint.h"
 #include "stdio.h"
+#include "string.h"
 
 #define LIST_MAKE(type, name, capacity)                                        \
   typedef struct {                                                             \

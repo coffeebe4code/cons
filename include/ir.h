@@ -10,9 +10,12 @@
 typedef enum { BPlain, BIf, BRet, BFirst } block_e;
 
 typedef struct {
-  pro_op_e op;
   size_t idx;
-  size_t gen;
+  byte8_t data;
+} var_t;
+
+typedef struct {
+  pro_op_e op;
 } ir_t;
 
 LIST_MAKE(ir_t, ir_l, 100);
