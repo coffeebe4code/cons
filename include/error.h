@@ -1,5 +1,6 @@
 #pragma once
-#include <stdio.h>
+#include "stdarg.h"
+#include "stdio.h"
 
 typedef enum {
   scanner = 0,

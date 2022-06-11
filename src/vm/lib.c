@@ -21,7 +21,7 @@
 vm_t vm_new(byte8_t *start, byte8_t *consts, byte8_t *vars) {
   vm_t val = (vm_t){.instrs = start,
                     .ip = start,
-                    .stack = {0},
+                    .stack = {{0}},
                     .sp = NULL,
                     .consts = consts,
                     .vars = vars};

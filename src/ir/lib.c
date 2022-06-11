@@ -9,8 +9,8 @@ void ir_exit() {
 }
 
 ir_source_t ir_new() {
-  ir_source_t val = {.blocks = blocks_new()};
-  if (val.blocks.data == NULL) {
+  ir_source_t val = {.blocks = NULL};
+  if (val.blocks == NULL) {
     ir_exit();
   }
   return val;

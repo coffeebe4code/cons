@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __BYTE_T__
+#define __BYTE_T__
 #include "byte.h"
 #include "stdint.h"
 #include "stdio.h"
@@ -17,3 +18,4 @@ void gen_add32(gen_source_t *gen, byte4_t value);
 void gen_add64(gen_source_t *gen, byte8_t value);
 void gen_print_hex(gen_source_t *gen);
 void gen_free(gen_source_t *gen);
+#endif

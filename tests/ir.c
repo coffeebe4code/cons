@@ -2,6 +2,7 @@
 #define WITH_MOCKING
 #include "../barista.h"
 #include "../include/ir.h"
+#include "../include/list.h"
 
 DECLARE_MOCK_NOARGS(gen_source_t, gen_new);
 DECLARE_MOCK_VOID(gen_add64, gen_source_t *val COMMA_D byte8_t byte);

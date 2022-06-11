@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __LISTS__
+#define __LISTS__
 #include "stdint.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -10,11 +11,13 @@
     size_t cap;                                                                \
     type *data;                                                                \
   } name##_l;                                                                  \
+                                                                               \
   name##_l name##_new() {                                                      \
     name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
     val.data = calloc(sizeof(type), capacity);                                 \
     return val;                                                                \
   }                                                                            \
+                                                                               \
   int name##_add(name##_l *list, type val) {                                   \
     if (list->cap <= list->len) {                                              \
       type *temp = NULL;                                                       \
@@ -32,4 +35,6 @@
     }                                                                          \
     memcpy(&list->data[list->len++], &val, sizeof(type));                      \
     return 0;                                                                  \
-  }\
+  }
+
+#endif

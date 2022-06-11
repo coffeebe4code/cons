@@ -1,14 +1,14 @@
-#pragma once
+#ifndef __IR__
+#define __IR__
 #include "ast.h"
 #include "byte.h"
 #include "gen.h"
 #include "list.h"
 #include "pros.h"
-#include "stdio.h"
 
-LIST_MAKE(block_t, blocks, 100);
+// LIST_MAKE(block_t, blocks, 100);
 typedef struct {
-  blocks_l blocks;
+  block_t *blocks;
 } ir_source_t;
 
 ir_source_t ir_new();
@@ -22,3 +22,4 @@ void ir_add64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_sub64(ir_source_t *source, byte8_t left, byte8_t right);
+#endif
