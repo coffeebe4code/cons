@@ -20,6 +20,11 @@ typedef struct {
 } block_t;
 
 typedef struct {
+  size_t idx;
+  byte8_t data;
+} var_t;
+
+typedef struct {
   pro_op_e op;
 } ir_t;
 
