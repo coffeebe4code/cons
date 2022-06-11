@@ -9,12 +9,11 @@ void ir_exit() {
 }
 
 ir_source_t ir_new() {
-  ir_source_t val = {
-      .constants = byte8s_new(), .variables = byte8s_new(), .irs = irs_new()};
-  if (val.constants.data == NULL || val.variables.data == NULL ||
-      val.irs.data == NULL) {
-    ir_exit();
-  }
+  ir_source_t val = {};
+  // if (val.constants.data == NULL || val.variables.data == NULL ||
+  //    val.irs.data == NULL) {
+  //  ir_exit();
+  //}
   return val;
 }
 
@@ -47,15 +46,16 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
   }
 }
 
-void ir_const64(ir_source_t *source, byte8_t left) {
-  int insert = byte8s_add(&source->constants, left);
-  ir_t val = (ir_t){.op = CONST, .idx = 0, .gen = 0};
-  insert += irs_add(&source->irs, val);
-  if (insert) {
-    ir_exit();
-  }
-}
+// void ir_const64(ir_source_t *source, byte8_t left) {
+//  int insert = byte8s_add(&source->constants, left);
+//  ir_t val = (ir_t){.op = CONST, .idx = 0, .gen = 0};
+//  insert += irs_add(&source->irs, val);
+//  if (insert) {
+//    ir_exit();
+//  }
+//}
 
+void ir_const64(ir_source_t *source, byte8_t left);
 void ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_sub64(ir_source_t *source, byte8_t left, byte8_t right);

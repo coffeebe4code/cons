@@ -6,7 +6,7 @@
 LIST_MAKE(char, cstrs, 2);
 
 void test_list() {
-  cstrs_t val = cstrs_new();
+  cstrs_l val = cstrs_new();
   cstrs_add(&val, 'a');
   cstrs_add(&val, 'b');
   cstrs_add(&val, 'c');

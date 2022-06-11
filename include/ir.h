@@ -4,34 +4,11 @@
 #include "gen.h"
 #include "list.h"
 #include "pros.h"
-#include "stdint.h"
 #include "stdio.h"
 
-typedef enum { BPlain, BIf, BRet, BFirst } block_e;
-
-LIST_MAKE(size_t, vars, 100);
-LIST_MAKE(ir_t, irs, 100);
-LIST_MAKE(byte8_t, byte8s, 100);
-
+LIST_MAKE(block_t, blocks, 100);
 typedef struct {
-  size_t label;
-  block_e kind;
-  vars_t *vars_idx;
-} block_t;
-
-typedef struct {
-  size_t idx;
-  byte8_t data;
-} var_t;
-
-typedef struct {
-  pro_op_e op;
-} ir_t;
-
-typedef struct {
-  byte8s_t constants;
-  byte8s_t variables;
-  irs_t irs;
+  blocks_l blocks;
 } ir_source_t;
 
 ir_source_t ir_new();

@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
   EXE("cons-repl", "cli");
   DEPS("lex", "lexeme", "token", "span");
   DEPS("vm", "byte");
+  DEPS("pros", "list", "byte");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");

@@ -35,36 +35,32 @@ instr_result_e vm_run(vm_t vm) {
   int cont = 1;
   while (cont) {
     instr = READ_IP();
-    switch ((pro_op_e)instr.raw) {
-    case NOOP: {
-      // do nothing
-      break;
-    }
-    case RET: {
+    switch ((op_e)instr.raw) {
+    case Ret: {
       cont = 0;
       break;
     }
-    case CONST: {
+    case f64Const: {
       PUSH(READ_CONST());
       break;
     }
-    case ADD: {
+    case f64Add: {
       BINARY_OP(+);
       break;
     }
-    case MUL: {
+    case f64Mul: {
       BINARY_OP(*);
       break;
     }
-    case DIV: {
+    case f64Div: {
       BINARY_OP(/);
       break;
     }
-    case SUB: {
+    case f64Sub: {
       BINARY_OP(-);
       break;
     }
-    case VAR: {
+    default: {
       break;
     }
     }
