@@ -4,9 +4,11 @@
 #include "../include/vm.h"
 
 typedef enum {
+  Noop = 0,
   RetVoid,
   Ret,
   Load,
+  Phi,
   f64Const,
   f64Mul,
   f64Sub,

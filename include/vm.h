@@ -3,10 +3,17 @@
 #include "stdio.h"
 
 #define VM_MAX_STACK 1024
+#ifdef CONSX64
+#define VM_REG_COUNT 14
+#else
+#define VM_REG_COUNT 12
+#endif
 
 typedef struct {
   byte8_t *instrs;
   byte8_t *ip;
+  byte8_t regs[VM_REG_COUNT];
+  int used_regs[VM_REG_COUNT];
   byte8_t stack[VM_MAX_STACK];
   byte8_t *sp;
   byte8_t *consts;

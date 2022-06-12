@@ -6,11 +6,22 @@
 
 LIST_DECL(size_t, succs);
 LIST_DECL(size_t, preds);
-typedef enum { Plain, IfBlock, RetBlock, RetBlockVoid, First } block_e;
+
 typedef enum {
+  PlainBlock,
+  IfBlock,
+  RetBlock,
+  RetBlockVoid,
+  FirstBlock
+} block_e;
+
+typedef enum {
+  Noop = 0,
   RetVoid,
   Ret,
   Load,
+  Store,
+  Phi,
   f64Const,
   f64Mul,
   f64Sub,
