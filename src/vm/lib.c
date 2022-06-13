@@ -21,7 +21,7 @@
     byte8_t dst = vm.regs[READ_IP().raw];                                      \
     byte8_t left = vm.regs[READ_IP().raw];                                     \
     byte8_t right = vm.regs[READ_IP().raw];                                    \
-    vm.regs[dst.raw] = vm.regs[left.raw].raw op vm.regs[right.raw].raw;        \
+    vm.regs[dst.raw].raw = vm.regs[left.raw].raw op vm.regs[right.raw].raw;    \
   } while (0);
 
 vm_t vm_new(byte8_t *start, byte8_t *consts, byte8_t *vars) {
