@@ -19,11 +19,10 @@ typedef enum {
 typedef uint8_t byte_t;
 
 void test_bin() {
-  byte8_t test_data[9] = {BYTE8_T_RAW(f64Const), BYTE8_T_RAW(0),
-                          BYTE8_T_RAW(f64Const), BYTE8_T_RAW(1),
-                          BYTE8_T_RAW(f64Add),   BYTE8_T_RAW(f64Const),
-                          BYTE8_T_RAW(2),        BYTE8_T_RAW(f64Add),
-                          BYTE8_T_RAW(Ret),      BYTE8_T_RAW(0)};
+  byte8_t test_data[9] = {
+      BYTE8_T_RAW(f64Const), BYTE8_T_RAW(0),      BYTE8_T_RAW(f64Const),
+      BYTE8_T_RAW(1),        BYTE8_T_RAW(f64Add), BYTE8_T_RAW(f64Const),
+      BYTE8_T_RAW(2),        BYTE8_T_RAW(f64Add), BYTE8_T_RAW(Ret)};
   byte8_t nums[3] = {BYTE8_T_RAW(22), BYTE8_T_RAW(55), BYTE8_T_RAW(1)};
   vm_t vm = vm_new(test_data, nums, NULL);
   instr_result_e result = vm_run(vm);
