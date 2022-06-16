@@ -28,32 +28,56 @@ void check_size(gen_source_t *gen, uint8_t size) {
   gen->len += size;
 }
 
-void gen_add8(gen_source_t *gen, byte_t value) {
+size_t gen_add8(gen_source_t *gen, byte_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
+  size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
+  return pos;
 }
 
-void gen_add16(gen_source_t *gen, byte2_t value) {
+size_t gen_add16(gen_source_t *gen, byte2_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
+  size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
+  return pos;
 }
 
-void gen_add32(gen_source_t *gen, byte4_t value) {
+size_t gen_add32(gen_source_t *gen, byte4_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
+  size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
+  return pos;
 }
 
-void gen_add64(gen_source_t *gen, byte8_t value) {
+byte_t *gen_getbyte(gen_source_t *gen, size_t idx) {
+  return (gen->binary + (idx * sizeof(byte_t)));
+}
+
+byte2_t *gen_getbyte2(gen_source_t *gen, size_t idx) {
+  return (byte2_t *)(gen->binary + (idx * sizeof(byte_t)));
+}
+
+byte4_t *gen_getbyte4(gen_source_t *gen, size_t idx) {
+  return (byte4_t *)(gen->binary + (idx * sizeof(byte_t)));
+}
+
+byte8_t *gen_getbyte8(gen_source_t *gen, size_t idx) {
+  return (byte8_t *)(gen->binary + (idx * sizeof(byte_t)));
+}
+
+size_t gen_add64(gen_source_t *gen, byte8_t value) {
   size_t size = sizeof(value);
   check_size(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
+  size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
+  return pos;
 }
 
 void gen_print_hex(gen_source_t *gen) {
