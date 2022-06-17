@@ -23,7 +23,7 @@ void test_terminal() {
 
   ast_t *val = parse_terminal(&lex, &parse);
   ASSERT(val->expr_kind == Number);
-  ASSERT(val->tok1.number.raw == 7);
+  ASSERT(val->tok1.number == 7);
   parser_free(&parse);
 
   char *input2 = "my_symbol";
@@ -70,13 +70,11 @@ void test_bin_op() {
 
   ast_t *val = parse_low_bin(&lex, &parse);
   ASSERT(val->expr_kind == BinOp);
-  ASSERT((int)val->tok1.bin_left_expr->tok1.number.raw == 1);
+  ASSERT((int)val->tok1.bin_left_expr->tok1.number == 1);
   ASSERT(val->tok2.bin_op == Plus);
-  ASSERT((int)val->tok3.bin_right_expr->tok1.bin_left_expr->tok1.number.raw ==
-         2);
+  ASSERT((int)val->tok3.bin_right_expr->tok1.bin_left_expr->tok1.number == 2);
   ASSERT(val->tok3.bin_right_expr->tok2.bin_op == Mul);
-  ASSERT((int)val->tok3.bin_right_expr->tok3.bin_right_expr->tok1.number.raw ==
-         2);
+  ASSERT((int)val->tok3.bin_right_expr->tok3.bin_right_expr->tok1.number == 2);
 
   parser_free(&parse);
 }

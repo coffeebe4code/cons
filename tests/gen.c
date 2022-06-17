@@ -18,7 +18,7 @@ int main() {
   SHOULDB("add some binary data", {
     gen_source_t val = gen_new();
     byte_t clc = 0xF8;
-    MOCK(convert_byte4_be, (byte4_t){.raw = 0x0A47034C});
+    MOCK(convert_byte4_be, 0x0A47034C);
     byte4_t addi = BYTE4(0x4C03470A);
     size_t pos0 = gen_add8(&val, clc);
     ASSERT(pos0 == 0);

@@ -3,7 +3,6 @@
 #include "../../include/lexeme.h"
 #include "../../include/parse.h"
 #include "inttypes.h"
-#include "stdint.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -102,7 +101,7 @@ int ast_print(ast_t *ast, char *print) {
   char *initial = print;
   switch (ast->expr_kind) {
   case Number: {
-    print += snprintf(print, 1000, "%" PRIu64, ast->tok1.number.raw);
+    print += snprintf(print, 1000, "%" PRIu64, ast->tok1.number);
   } break;
   case Identifier:
     print = memcpy(print, ast->tok1.ident, strlen(ast->tok1.ident));

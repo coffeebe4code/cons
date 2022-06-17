@@ -101,27 +101,27 @@ typedef enum {
 
 typedef uint8_t byte_t;
 
-#define helper_exp2() BYTE_T_RAW(0), BYTE_T_RAW(0)
-#define helper_exp3() BYTE_T_RAW(0), BYTE_T_RAW(0), BYTE_T_RAW(0)
-#define helper_exp4() BYTE_T_RAW(0), BYTE_T_RAW(0), BYTE_T_RAW(0), BYTE_T_RAW(0)
+#define helper_exp2() 0, 0
+#define helper_exp3() 0, 0, 0
+#define helper_exp4() 0, 0, 0, 0
 
 void test_bin() {
   // clang-format off
   byte_t test_data[29] = {
-      BYTE_T_RAW(f64Const), BYTE_T_RAW(0), helper_exp2(),
+      f64Const, 0, helper_exp2(),
       helper_exp4(),
-      helper_exp3(), BYTE_T_RAW(77),
-      BYTE_T_RAW(f64Const), BYTE_T_RAW(1), helper_exp2(),
+      helper_exp3(), 77,
+      f64Const, 1, helper_exp2(),
       helper_exp4(),
-      helper_exp3(), BYTE_T_RAW(77),
-      BYTE_T_RAW(f64Add), BYTE_T_RAW(1), BYTE_T_RAW(1), BYTE_T_RAW(0), BYTE_T_RAW(RetVoid)};
+      helper_exp3(), 77,
+      f64Add, 1, 1, 0, RetVoid};
   // clang-format on
 
   vm_t vm = vm_new(test_data);
   instr_result_e result = vm_run(vm);
 
   ASSERT(result == OK);
-  ASSERT(((vm.regs[1])).raw == 154);
+  ASSERT(((vm.regs[1])) == 154);
 }
 int main() {
   DESCRIBE("vm");
