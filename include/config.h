@@ -2,10 +2,10 @@
 #include "stdint.h"
 
 /// typedefs
-typedef struct uni_t {
+typedef struct config_t {
   int is_little_endian;
-} uni_t;
+} config_t;
 
 /// forwards
 void __attribute__((constructor)) set_uni_data();
-static uni_t uni_vals __attribute__((unused));
+static config_t config_vals __attribute__((unused));

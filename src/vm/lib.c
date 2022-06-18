@@ -1,64 +1,84 @@
-#include "../../include/bytecode.h"
+#include "../../include/pros.h"
 #include "../../include/vm.h"
 
 // macros
-#define READ_IP() (*vm.ip++)
-#define READ_CONST() (vm.consts[READ_IP().raw])
-#define POP() *(--vm.sp)
-#define PUSH(val)                                                              \
-  do {                                                                         \
-    *vm.sp = val;                                                              \
-    vm.sp++;                                                                   \
-  } while (0)
+#define READ_IP() (*(vm.ip))
+#define INC_IP32() (vm.ip += 4)
+#define INC_IP64() (vm.ip += 8)
+
+#define READ_DST() ((instr & 0x00FF0000) >> 16)
+#define READ_SRCL() ((instr & 0x0000FF00) >> 8)
+#define READ_SRCR() (instr & 0x000000FF)
+
 #define BINARY_OP(op)                                                          \
   do {                                                                         \
-    byte8_t b = POP();                                                         \
-    byte8_t a = POP();                                                         \
-    byte8_t c = (byte8_t){.raw = (a.raw op b.raw)};                            \
-    PUSH(c);                                                                   \
-  } while (0)
+    dst = READ_DST();                                                          \
+    srcl = READ_SRCL();                                                        \
+    srcr = READ_SRCR();                                                        \
+    vm.regs[dst] = vm.regs[srcl] + vm.regs[srcr];                              \
+    INC_IP32();                                                                \
+  } while (0);
 
-vm_t vm_new(byte8_t *start, byte8_t *consts) {
+vm_t vm_new(byte_t *start) {
   vm_t val = (vm_t){
-      .instrs = start, .ip = start, .stack = {0}, .sp = NULL, .consts = consts};
-  val.sp = val.consts;
+      .instrs = start, .ip = start, .regs = {0}, .stack = {0}, .sp = NULL};
+  val.sp = val.stack;
   return val;
 }
 
-instr_result_e vm_run(vm_t vm) {
-  instr_result_e result = OK;
-  byte8_t instr;
+vm_t vm_run(vm_t vm) {
+  byte4_t instr;
+  byte_t dst;
+  byte_t srcl;
+  byte_t srcr;
   int cont = 1;
   while (cont) {
-    instr = READ_IP();
-    switch ((bytecode_e)instr.raw) {
-    case RET: {
+    memcpy(&instr, vm.ip, sizeof(byte4_t));
+    switch ((instr & 0xFF000000) >> 24) {
+    case NoOp: {
+      INC_IP32();
+      break;
+    }
+    case Ret: {
+      INC_IP32();
       cont = 0;
       break;
     }
-    case CONST: {
-      PUSH(READ_CONST());
+    case RetVoid: {
+      INC_IP32();
+      cont = 0;
       break;
     }
-    case ADD: {
+    case f64Const: {
+      dst = READ_DST();
+      INC_IP64();
+      memcpy(&(vm.regs[dst]), vm.ip, sizeof(byte8_t));
+      INC_IP64();
+      break;
+    }
+    case f64Add: {
       BINARY_OP(+);
       break;
     }
-    case MUL: {
+    case f64Mul: {
       BINARY_OP(*);
       break;
     }
-    case DIV: {
+    case f64Div: {
       BINARY_OP(/);
       break;
     }
-    case SUB: {
+    case f64Sub: {
       BINARY_OP(-);
+      break;
+    }
+    default: {
+      cont = 0;
       break;
     }
     }
   }
-  return result;
+  return vm;
 }
 
 void vm_free();

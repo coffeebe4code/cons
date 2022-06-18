@@ -1,31 +1,33 @@
 #define NOBUILD_IMPLEMENTATION
-#define CC "clang"
+#define CC "gcc"
 #define CFLAGS "-Wall", "-Werror", "-std=c11", "-Wextra"
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {
   FEATURE("token");
+  FEATURE("list");
   FEATURE("span");
   FEATURE("lex");
   FEATURE("lexeme");
   FEATURE("ast");
   FEATURE("parse");
-  FEATURE("bytecode");
   FEATURE("vm");
   FEATURE("gen");
   FEATURE("arch");
-  FEATURE("uni");
+  FEATURE("config");
   FEATURE("ir");
   FEATURE("byte");
   FEATURE("error");
   FEATURE("cli");
+  FEATURE("pros");
   EXE("cons-repl", "cli");
   DEPS("lex", "lexeme", "token", "span");
+  DEPS("vm", "byte");
+  DEPS("pros", "list", "byte");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");
-  DEPS("ir", "ast");
-  DEPS("bytecode", "ast");
+  DEPS("ir", "ast", "pros", "byte", "gen");
   BOOTSTRAP(argc, argv);
   return 0;
 }

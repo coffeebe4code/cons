@@ -195,11 +195,15 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
   type name(arguments __attribute__((unused))) {                               \
     return (type)__var_##name[__var_##name##_inc++];                           \
   }
-#define DECLARE_MOCK_VOID(type, name)                                          \
+#define DECLARE_MOCK_NOARGS(type, name)                                        \
   type __var_##name[255];                                                      \
   size_t __var_##name##_inc = 0;                                               \
   size_t __var_##name##_actual = 0;                                            \
   type name() { return (type)__var_##name[__var_##name##_inc++]; }
+#define DECLARE_MOCK_NOARGS_VOID(name)                                         \
+  void name() {}
+#define DECLARE_MOCK_VOID(name, arguments)                                     \
+  void name(arguments __attribute__((unused))) {}
 #define DECLARE_MOCK_T(def, type) typedef struct def type;
 #define DECLARE_MOCK_E(def, type) typedef enum def type;
 #define MOCK(name, value) __var_##name[__var_##name##_actual++] = value;

@@ -1,41 +1,25 @@
-#pragma once
-#include "stdint.h"
+#ifndef __IR__
+#define __IR__
+#include "ast.h"
+#include "byte.h"
+#include "gen.h"
+#include "list.h"
+#include "pros.h"
 
-typedef enum ir_kind_e {
-  i64,
-  u64,
-  f64,
-  d64,
-  i32,
-  u32,
-  f32,
-  d32,
-  i16,
-  u16,
-  u8,
-  i8,
-  uchar,
-  data,
-  arr,
-  addr,
-  ptr,
-  unary,
-  branch,
-  func,
-  loop,
-} ir_kind_e;
-
-typedef struct ir_obj_t {
-  ir_kind_e kind;
-  int vs;
-} ir_obj_t;
-
-typedef struct ir_source_t {
-  ir_obj_t *objs;
-  int *call_graphs;
-  int symbols;
+LIST_DECL(block_t, blocks);
+typedef struct {
+  blocks_l blocks;
 } ir_source_t;
 
-void ir_iconst(ir_source_t *source, ir_kind_e kind, uint64_t val);
-void ir_iadd(ir_source_t *source, ir_kind_e kind, ir_obj_t *left,
-             ir_obj_t *right);
+ir_source_t ir_new();
+void ir_begin(ir_source_t *source, ast_t *main);
+void ir_add(ir_source_t *source, ast_t *next);
+void ir_clean(ir_source_t *source);
+void ir_free(ir_source_t *source);
+
+void ir_const64(ir_source_t *source, byte8_t left);
+void ir_add64(ir_source_t *source, byte8_t left, byte8_t right);
+void ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
+void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
+void ir_sub64(ir_source_t *source, byte8_t left, byte8_t right);
+#endif

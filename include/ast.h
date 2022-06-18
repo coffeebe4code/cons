@@ -27,9 +27,7 @@ typedef struct ast_t {
 } ast_t;
 
 #define AST_Num(val)                                                           \
-  (ast_t) {                                                                    \
-    .expr_kind = Number, .tok1.number = (byte8_t) { .raw = val }               \
-  }
+  (ast_t) { .expr_kind = Number, .tok1.number = val }
 
 #define AST_Identifer(val)                                                     \
   (ast_t) { .expr_kind = Identifier, .tok1.ident = val }

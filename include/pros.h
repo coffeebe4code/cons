@@ -1,7 +1,19 @@
-#define MORE_COFFEE
-#define WITH_MOCKING
-#include "../barista.h"
-#include "../include/vm.h"
+#ifndef __PROS__
+#define __PROS__
+#include "byte.h"
+#include "list.h"
+#include "stdio.h"
+
+LIST_DECL(size_t, succs);
+LIST_DECL(size_t, preds);
+
+typedef enum {
+  PlainBlock,
+  IfBlock,
+  RetBlock,
+  RetBlockVoid,
+  FirstBlock
+} block_e;
 
 typedef enum {
   NoOp = 0,
@@ -97,33 +109,27 @@ typedef enum {
   u8Sub,
   u8Div,
   u8Add,
+
 } op_e;
 
-typedef uint8_t byte_t;
+typedef struct {
+  size_t idx;
+} var_t;
 
-#define helper_exp2() 0, 0
-#define helper_exp3() 0, 0, 0
-#define helper_exp4() 0, 0, 0, 0
+typedef struct {
+  op_e op;
+  var_t dst;
+  var_t lft;
+  var_t rgt;
+} instr_t;
 
-void test_bin() {
-  // clang-format off
-  byte_t test_data[40] = {
-      helper_exp2(), 0, f64Const,
-      helper_exp4(),
-      77, helper_exp3(), helper_exp4(),
-      helper_exp2(), 1, f64Const,
-      helper_exp4(),
-      77, helper_exp3(), helper_exp4(),
-      0, 1, 1, f64Add, helper_exp3(), RetVoid};
-  // clang-format on
+LIST_DECL(instr_t, instrs);
 
-  vm_t vm = vm_new(test_data);
-  vm = vm_run(vm);
-
-  ASSERT(vm.regs[1] == 154);
-}
-int main() {
-  DESCRIBE("vm");
-  SHOULDF("vm bin op", test_bin);
-  RETURN();
-}
+typedef struct {
+  size_t *preds;
+  size_t *succs;
+  size_t label;
+  block_e kind;
+  instr_t *instructions;
+} block_t;
+#endif
