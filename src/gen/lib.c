@@ -21,7 +21,7 @@ gen_source_t gen_new() {
 
 void check_size(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
-    gen->cap <<= 2;
+    gen->cap <<= 1;
     gen->binary = realloc(gen->binary, gen->cap * sizeof(byte_t));
     gen_exit(gen->binary);
   }
@@ -57,18 +57,6 @@ size_t gen_add32(gen_source_t *gen, byte4_t value) {
 
 byte_t *gen_getbyte(gen_source_t *gen, size_t idx) {
   return (gen->binary + (idx * sizeof(byte_t)));
-}
-
-byte2_t *gen_getbyte2(gen_source_t *gen, size_t idx) {
-  return (byte2_t *)(gen->binary + (idx * sizeof(byte_t)));
-}
-
-byte4_t *gen_getbyte4(gen_source_t *gen, size_t idx) {
-  return (byte4_t *)(gen->binary + (idx * sizeof(byte_t)));
-}
-
-byte8_t *gen_getbyte8(gen_source_t *gen, size_t idx) {
-  return (byte8_t *)(gen->binary + (idx * sizeof(byte_t)));
 }
 
 size_t gen_add64(gen_source_t *gen, byte8_t value) {

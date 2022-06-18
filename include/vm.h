@@ -9,7 +9,6 @@ typedef struct {
   byte_t *instrs;
   byte_t *ip;
   byte8_t regs[VM_REG_COUNT];
-  int used_regs[VM_REG_COUNT];
   byte8_t stack[VM_MAX_STACK];
   byte8_t *sp;
 } vm_t;
@@ -23,5 +22,5 @@ typedef struct {
 typedef enum { OK, RUNTIME } instr_result_e;
 
 vm_t vm_new(byte_t *start);
-instr_result_e vm_run(vm_t vm);
+vm_t vm_run(vm_t vm);
 void vm_free();

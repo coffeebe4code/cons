@@ -22,10 +22,10 @@
   int name##_add(name##_l *list, type val) {                                   \
     if (list->cap <= list->len) {                                              \
       type *temp = NULL;                                                       \
-      list->cap <<= 2;                                                         \
+      list->cap <<= 1;                                                         \
       temp = realloc(list->data, list->cap * sizeof(type));                    \
       if (temp == NULL) {                                                      \
-        list->cap >>= 2;                                                       \
+        list->cap >>= 1;                                                       \
         list->cap++;                                                           \
         temp = realloc(list->data, list->cap * sizeof(type));                  \
         if (temp == NULL) {                                                    \

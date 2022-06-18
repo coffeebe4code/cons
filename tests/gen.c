@@ -33,8 +33,8 @@ int main() {
     ASSERT(val.binary[4] == 0x0A);
     ASSERT(pos1 == 1);
 
-    byte4_t *result = gen_getbyte4(&val, pos1);
-    ASSERT(result->raw == 0x4C03470A);
+    byte_t *result = gen_getbyte(&val, pos1);
+    ASSERT(*result == 0x4C);
     gen_free(&val);
   });
 

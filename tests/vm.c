@@ -107,21 +107,20 @@ typedef uint8_t byte_t;
 
 void test_bin() {
   // clang-format off
-  byte_t test_data[29] = {
-      f64Const, 0, helper_exp2(),
+  byte_t test_data[40] = {
+      helper_exp2(), 0, f64Const,
       helper_exp4(),
-      helper_exp3(), 77,
-      f64Const, 1, helper_exp2(),
+      77, helper_exp3(), helper_exp4(),
+      helper_exp2(), 1, f64Const,
       helper_exp4(),
-      helper_exp3(), 77,
-      f64Add, 1, 1, 0, RetVoid};
+      77, helper_exp3(), helper_exp4(),
+      0, 1, 1, f64Add, helper_exp3(), RetVoid};
   // clang-format on
 
   vm_t vm = vm_new(test_data);
-  instr_result_e result = vm_run(vm);
+  vm = vm_run(vm);
 
-  ASSERT(result == OK);
-  ASSERT(((vm.regs[1])) == 154);
+  ASSERT(vm.regs[1] == 154);
 }
 int main() {
   DESCRIBE("vm");
