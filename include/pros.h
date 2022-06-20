@@ -35,8 +35,8 @@ typedef enum {
   Array,
   SwitchOp,
   BreakOp,
-  Invoke,
-  GenInvoke,
+  CSInvoke,
+  CInvoke,
   Access,
   PtrOp,
   AddrOp,
@@ -113,14 +113,14 @@ typedef enum {
 } op_e;
 
 typedef struct {
-  size_t idx;
-} var_t;
-
-typedef struct {
   op_e op;
-  var_t dst;
-  var_t lft;
-  var_t rgt;
+  byte_t dst;
+  byte_t lft;
+  union {
+    byte_t rgt;
+    void *ptr;
+  } data;
+  size_t sizeptr;
 } instr_t;
 
 LIST_DECL(instr_t, instrs);
@@ -129,7 +129,7 @@ typedef struct {
   size_t *preds;
   size_t *succs;
   size_t label;
-  block_e kind;
   instr_t *instructions;
+  block_e kind;
 } block_t;
 #endif

@@ -23,8 +23,8 @@ typedef enum {
   Array,
   SwitchOp,
   BreakOp,
-  Invoke,
-  GenInvoke,
+  CSInvoke,
+  CInvoke,
   Access,
   PtrOp,
   AddrOp,
@@ -97,6 +97,7 @@ typedef enum {
   u8Sub,
   u8Div,
   u8Add,
+
 } op_e;
 
 typedef uint8_t byte_t;

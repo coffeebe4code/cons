@@ -1,8 +1,31 @@
+#include "../../include/gen.h"
 #include "../../include/ir.h"
 #include "../../include/list.h"
+#include "../../include/pros.h"
 #include "string.h"
 
+inline instr_t make_ir_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
+  instr_t val = (instr_t){
+      .op = op, .dst = dst, .lft = srcl, .data.rgt = srcr, .sizeptr = 0};
+  return val;
+}
+
+inline void add_ir_data(instr_t *instr, void *data, size_t size) {
+  instr->data.ptr = data;
+  instr->sizeptr = size;
+}
+
+inline byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
+  byte4_t val = 0;
+  val = op << 24;
+  val &= dst << 16;
+  val &= srcl << 8;
+  val &= srcr;
+  return val;
+}
+
 LIST_USE(block_t, blocks, 10);
+
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
   puts("          in ir generation");
@@ -10,17 +33,18 @@ void ir_exit() {
 }
 
 ir_source_t ir_new() {
-  ir_source_t val = {.blocks = blocks_new()};
+  ir_source_t val = {.blocks = blocks_new(), .new_idx = 0, .gen = gen_new()};
   if (val.blocks.data == NULL) {
     ir_exit();
   }
   return val;
 }
 
-void ir_recurse(ir_source_t *ir, ast_t *recurse) {
+size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
+  size_t result = 0;
   switch (recurse->expr_kind) {
   case Number: {
-    ir_const64(ir, recurse->tok1.number);
+    result = ir_constf64(ir, recurse->tok1.number);
     break;
   }
   case BinOp: {
@@ -29,34 +53,23 @@ void ir_recurse(ir_source_t *ir, ast_t *recurse) {
   default:
     break;
   }
+  return result;
 }
 
 void ir_begin(ir_source_t *ir, ast_t *main) {
-  int cont = 1;
-  ast_t *curr = main;
-  while (cont) {
-    switch (curr->expr_kind) {
-    case Number: {
-      ir_const64(ir, curr->tok1.number);
-      break;
-    }
-    default:
-      break;
-    }
-  }
+  size_t main_result __attribute__((unused)) = ir_recurse(ir, main);
 }
 
-void ir_const64(ir_source_t *source __attribute__((unused)),
-                byte8_t left __attribute__((unused))) {
+size_t ir_constf64(ir_source_t *source, byte8_t left) {
+  size_t dst = source->new_idx;
+  byte4_t instr = make_gen_instr(f64Const, source->new_idx++, 0, 0);
+  gen_add32(&source->gen, instr);
+  gen_add64(&source->gen, left);
   // int insert = byte8s_add(&source->constants, left);
   // instr_t val = (instr_t){.op = CONST, .idx = 0, .gen = 0};
   // insert += irs_add(&source->irs, val);
   // if (insert) {
   //  ir_exit();
   //}
+  return dst;
 }
-
-void ir_const64(ir_source_t *source, byte8_t left);
-void ir_mul64(ir_source_t *source, byte8_t left, byte8_t right);
-void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
-void ir_sub64(ir_source_t *source, byte8_t left, byte8_t right);
