@@ -10,6 +10,7 @@
 LIST_DECL(block_t, blocks);
 typedef struct {
   blocks_l blocks;
+  block_t curr_block;
   gen_source_t gen;
   size_t new_idx;
   size_t main_exit;
@@ -22,7 +23,7 @@ void ir_clean(ir_source_t *source);
 void ir_free(ir_source_t *source);
 
 size_t ir_constf64(ir_source_t *source, byte8_t left);
-size_t ir_addf64(ir_source_t *source, byte8_t left, byte8_t right);
+size_t ir_addf64(ir_source_t *source, size_t left, size_t right);
 void ir_mulf64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
 void ir_sub64(ir_source_t *source, size_t left, size_t right);
