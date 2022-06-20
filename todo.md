@@ -1,9 +1,8 @@
 # Possible Performance Improvements
 - lexemes are alloc'd in lexer.
 
-# TODO
-- Implement IR
-- Figure out size and Instruction Use
-- Make macro for easy use with bytes in byte
-- Figure out best place for storing consts and other datas
-- Let registers and stack grow infinitely until reg alloc algorithm
+# TODO 06-19-2022
+- Load f64 consts in instr with 16 bit and then 32 bit
+- Implement blocks
+- Implement register allocation algorithm 
+- Implement RAII

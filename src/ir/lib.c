@@ -48,16 +48,27 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     break;
   }
   case BinOp: {
-    break;
-  }
+    size_t left = ir_recurse(ir, recurse->tok1.bin_left_expr);
+    size_t right = ir_recurse(ir, recurse->tok1.bin_left_expr);
+    switch (recurse->tok2.bin_op) {
+    case Plus: {
+      result = ir_addf64(ir, left, right);
+      break;
+    }
+    default: {
+      puts("binop not implemented");
+      break;
+    }
+    }
   default:
     break;
+  }
   }
   return result;
 }
 
 void ir_begin(ir_source_t *ir, ast_t *main) {
-  size_t main_result __attribute__((unused)) = ir_recurse(ir, main);
+  ir->main_exit = ir_recurse(ir, main);
 }
 
 size_t ir_constf64(ir_source_t *source, byte8_t left) {
@@ -65,11 +76,12 @@ size_t ir_constf64(ir_source_t *source, byte8_t left) {
   byte4_t instr = make_gen_instr(f64Const, source->new_idx++, 0, 0);
   gen_add32(&source->gen, instr);
   gen_add64(&source->gen, left);
-  // int insert = byte8s_add(&source->constants, left);
-  // instr_t val = (instr_t){.op = CONST, .idx = 0, .gen = 0};
-  // insert += irs_add(&source->irs, val);
-  // if (insert) {
-  //  ir_exit();
-  //}
+  return dst;
+}
+
+size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
+  size_t dst = source->new_idx;
+  byte4_t instr = make_gen_instr(f64Add, source->new_idx++, left, right);
+  gen_add32(&source->gen, instr);
   return dst;
 }
