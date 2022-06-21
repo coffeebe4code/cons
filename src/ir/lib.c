@@ -4,18 +4,18 @@
 #include "../../include/pros.h"
 #include "string.h"
 
-inline instr_t make_ir_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
+instr_t make_ir_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   instr_t val = (instr_t){
       .op = op, .dst = dst, .lft = srcl, .data.rgt = srcr, .sizeptr = 0};
   return val;
 }
 
-inline void add_ir_data(instr_t *instr, void *data, size_t size) {
+void add_ir_data(instr_t *instr, void *data, size_t size) {
   instr->data.ptr = data;
   instr->sizeptr = size;
 }
 
-inline byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
+byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   byte4_t val = 0;
   val = op << 24;
   val &= dst << 16;
@@ -85,3 +85,6 @@ size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   gen_add32(&source->gen, instr);
   return dst;
 }
+void ir_clean(ir_source_t *source) { blocks_free(&source->blocks); }
+
+void ir_free(ir_source_t *source) { blocks_free(&source->blocks); }

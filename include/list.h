@@ -36,6 +36,7 @@
     }                                                                          \
     memcpy(&list->data[list->len++], &val, sizeof(type));                      \
     return 0;                                                                  \
-  }
+  }                                                                            \
+  void name##_free(name##_l *list) { free(list->data); }
 
 #endif

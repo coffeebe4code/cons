@@ -6,3 +6,6 @@
 - Implement blocks
 - Implement register allocation algorithm 
 - Implement RAII
+- Write tests for IR
+- Hook it all together in repl
+
