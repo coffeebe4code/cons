@@ -29,9 +29,6 @@ long int cmd_sutime = 0;
 
 #define PATH_SEP "/"
 
-#ifndef PREFIX
-#define PREFIX "/usr/local"
-#endif
 #ifndef CFLAGS
 #define CFLAGS "-Wall", "-Werror", "-std=c11"
 #endif
@@ -105,15 +102,11 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
 static int skip_tests = 0;
 static result_t results = {0, 0};
 static Cstr_Array *features = NULL;
-static Cstr_Array libs = {.elems = 0, .count = 0};
 static Cstr_Array *deps = NULL;
-static Cstr_Array *vends = NULL;
 static Cstr_Array *exes = NULL;
 static size_t feature_count = 0;
 static size_t deps_count = 0;
 static size_t exe_count = 0;
-static size_t vend_count = 0;
-static char this_prefix[256] = {0};
 
 // forwards
 Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed);
@@ -136,12 +129,9 @@ void obj_build_threaded(Cstr_Array comp_flags);
 void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
 void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
 Cstr_Array deps_get_lifted(Cstr file, Cstr_Array processed);
-void lib_build(Cstr feature, Cstr_Array flags, Cstr_Array deps);
-void static_build(Cstr feature, Cstr_Array flags, Cstr_Array deps);
 void manual_deps(Cstr feature, Cstr_Array deps);
 void add_feature(Cstr_Array val);
 void add_exe(Cstr_Array val);
-void add_vend(Cstr_Array val);
 void pid_wait(Pid pid);
 void test_pid_wait(Pid pid);
 int handle_args(int argc, char **argv);
@@ -217,23 +207,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     RM("obj");                                                                 \
   } while (0)
 
-#define LIB(feature)                                                           \
-  do {                                                                         \
-    libs = cstr_array_append(libs, feature);                                   \
-  } while (0)
-
-#define VEND(vendor, repo, hash)                                               \
-  do {                                                                         \
-    Cstr_Array v = cstr_array_make(vendor, repo, hash, NULL);                  \
-    add_vend(v);                                                               \
-  } while (0)
-
-#define STATIC(feature)                                                        \
-  do {                                                                         \
-    CMD(AR, "-rc", CONCAT("target/lib", feature, ".a"),                        \
-        CONCAT("obj/", feature, ".o"));                                        \
-  } while (0)
-
 #define EXEC_TESTS(feature)                                                    \
   do {                                                                         \
     Cmd cmd = {                                                                \
@@ -266,79 +239,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 #define BOOTSTRAP(argc, argv)                                                  \
   do {                                                                         \
     handle_args(argc, argv);                                                   \
-  } while (0)
-
-#define RUN(test)                                                              \
-  do {                                                                         \
-    test_result_status = 0;                                                    \
-    test();                                                                    \
-    if (test_result_status) {                                                  \
-      results.failure_total += 1;                                              \
-      fflush(stdout);                                                          \
-    } else {                                                                   \
-      results.passed_total += 1;                                               \
-      OKAY("Passed");                                                          \
-    }                                                                          \
-    test_result_status = 0;                                                    \
-  } while (0)
-
-#define RUNB(body)                                                             \
-  do {                                                                         \
-    test_result_status = 0;                                                    \
-    body if (test_result_status) {                                             \
-      results.failure_total += 1;                                              \
-      fflush(stdout);                                                          \
-    }                                                                          \
-    else {                                                                     \
-      results.passed_total += 1;                                               \
-      OKAY("Passed");                                                          \
-    }                                                                          \
-    test_result_status = 0;                                                    \
-  } while (0)
-
-#define ASSERT(assertion)                                                      \
-  do {                                                                         \
-    if (!(assertion)) {                                                        \
-      test_result_status = 1;                                                  \
-      FAILLOG("file: %s => line: %d => assertion: (%s)", __FILE__, __LINE__,   \
-              #assertion);                                                     \
-    }                                                                          \
-  } while (0)
-
-#define ASSERT_SIZE_EQ(left, right)                                            \
-  do {                                                                         \
-    if (left != right) {                                                       \
-      test_result_status = 1;                                                  \
-      FAILLOG("file: %s => line: %d => assertion: (%zu) == (%zu)", __FILE__,   \
-              __LINE__, left, right);                                          \
-    }                                                                          \
-  } while (0)
-
-#define ASSERT_STR_EQ(left, right)                                             \
-  do {                                                                         \
-    if (strcmp(left, right) != 0) {                                            \
-      test_result_status = 1;                                                  \
-      FAILLOG("file: %s => line: %d => assertion: (%s) == (%s)", __FILE__,     \
-              __LINE__, left, right);                                          \
-    }                                                                          \
-  } while (0)
-
-#define DESCRIBE(thing)                                                        \
-  do {                                                                         \
-    INFO("DESCRIBE: %s => %s", __FILE__, thing);                               \
-    FEATURE(thing);                                                            \
-  } while (0)
-
-#define SHOULDF(message, func)                                                 \
-  do {                                                                         \
-    RUNLOG("It should... %s", message);                                        \
-    RUN(func);                                                                 \
-  } while (0)
-
-#define SHOULDB(message, body)                                                 \
-  do {                                                                         \
-    RUNLOG("It should... %s", message);                                        \
-    RUNB(body);                                                                \
   } while (0)
 
 #define RETURN()                                                               \
@@ -382,34 +282,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     closedir(dir);                                                             \
   } while (0)
 
-#ifdef WITH_MOCKING
-#ifndef NO_MOCKING
-#define COMMA_D __attribute__((unused)),
-#define COMMA ,
-#define DECLARE_MOCK(type, name, arguments)                                    \
-  type __var_##name[255];                                                      \
-  size_t __var_##name##_inc = 0;                                               \
-  size_t __var_##name##_actual = 0;                                            \
-  type name(arguments __attribute__((unused))) {                               \
-    return (type)__var_##name[__var_##name##_inc++];                           \
-  }
-#define DECLARE_MOCK_VOID(type, name)                                          \
-  type __var_##name[255];                                                      \
-  size_t __var_##name##_inc = 0;                                               \
-  size_t __var_##name##_actual = 0;                                            \
-  type name() { return (type)__var_##name[__var_##name##_inc++]; }
-#define DECLARE_MOCK_T(def, type) typedef struct def type;
-#define MOCK(name, value) __var_##name[__var_##name##_actual++] = value;
-#define MOCK_T(type, value, name) type name = (type)value;
-#else
-#define DECLARE_MOCK(type, name)
-#define DECLARE_MOCK_T(def, type)
-#define MOCK(name, value)
-#define MOCK_T(type, value)
-#endif
-
-#endif
-
 #endif // NOBUILD_H_
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -450,7 +322,6 @@ Cstr cstr_no_ext(Cstr path) {
 
 void create_folders() {
   MKDIRS("target", "nobuild");
-  MKDIRS("vend");
   MKDIRS("obj");
   for (size_t i = 0; i < feature_count; i++) {
     MKDIRS(CONCAT("obj/", features[i].elems[0]));
@@ -495,19 +366,6 @@ void add_exe(Cstr_Array val) {
     PANIC("could not allocate memory: %s", strerror(errno));
   }
   memcpy(&exes[exe_count - 1], &val, sizeof(Cstr_Array));
-}
-
-void add_vend(Cstr_Array val) {
-  if (vends == NULL) {
-    vends = malloc(sizeof(Cstr_Array));
-    vend_count++;
-  } else {
-    vends = realloc(vends, sizeof(Cstr_Array) * ++vend_count);
-  }
-  if (vends == NULL || val.count == 0) {
-    PANIC("could not allocate memory: %s", strerror(errno));
-  }
-  memcpy(&vends[vend_count - 1], &val, sizeof(Cstr_Array));
 }
 
 Cstr_Array cstr_array_make(Cstr first, ...) {
@@ -628,7 +486,6 @@ int handle_args(int argc, char **argv) {
   int r = 0;
   int d = 0;
   char opt_b[256] = {0};
-  strcpy(this_prefix, PREFIX);
 
   while ((opt_char = getopt_long(argc, argv, "t:ce:sia:b:drx::", flags,
                                  &option_index)) != -1) {
@@ -669,30 +526,6 @@ int handle_args(int argc, char **argv) {
     }
     case 'i': {
       initialize();
-      break;
-    }
-    case 'f': {
-      for (size_t i = 0; i < vend_count; i++) {
-        if (strcmp(vends[i].elems[0], optarg) == 0) {
-          Fd fd =
-              fd_open_for_write(CONCAT("target/nobuild/", vends[i].elems[0]));
-          fprintf(fd, "%s", vends[i].elems[2]);
-          fclose(fd);
-        }
-      }
-      break;
-    }
-    case 'p': {
-      memset(this_prefix, 0, sizeof this_prefix);
-      if (optarg == NULL) {
-        option_index = argc - 1;
-        if (argv[option_index][0] == '-') {
-          optarg = PREFIX;
-        } else {
-          optarg = argv[option_index++];
-        }
-      }
-      strcpy(this_prefix, optarg);
       break;
     }
     case 't': {
@@ -759,10 +592,9 @@ void initialize() {
   MKDIRS("src");
   MKDIRS("tests");
   MKDIRS("include");
-  MKDIRS("vend");
   Cmd cmd = {.line = cstr_array_make(
                  "/bin/bash", "-c",
-                 "echo -e '\n# nobuild\nnobuild\ntarget\ndeps\nobj\nvend\n' >> "
+                 "echo -e '\n# nobuild\nnobuild\ntarget\ndeps\nobj\n' >> "
                  ".gitignore",
                  NULL)};
   cmd_run_sync(cmd);
@@ -801,26 +633,6 @@ Cstr parse_feature_from_path(Cstr val) {
 }
 
 void test_pid_wait(Pid pid) {
-#ifdef _WIN32
-  DWORD result = WaitForSingleObject(pid,     // HANDLE hHandle,
-                                     INFINITE // DWORD  dwMilliseconds
-  );
-
-  if (result == WAIT_FAILED) {
-    PANIC("could not wait on child process: %s", GetLastErrorAsString());
-  }
-
-  DWORD exit_status;
-  if (GetExitCodeProcess(pid, &exit_status) == 0) {
-    PANIC("could not get process exit code: %lu", GetLastError());
-  }
-
-  if (exit_status != 0) {
-    results.failure_total += exit_status;
-  }
-
-  CloseHandle(pid);
-#else
   for (;;) {
     int wstatus = 0;
     if (waitpid(pid, &wstatus, 0) < 0) {
@@ -837,24 +649,6 @@ void test_pid_wait(Pid pid) {
       PANIC("command process was terminated by %d", WTERMSIG(wstatus));
     }
   }
-#endif
-}
-
-void package(Cstr prefix) {
-  MKDIRS(CONCAT(prefix));
-  size_t len = strlen(prefix);
-  if (prefix[len - 1] != '/') {
-    prefix = CONCAT(prefix, "/");
-  }
-  MKDIRS(CONCAT(prefix, "lib"));
-  MKDIRS(CONCAT(prefix, "include"));
-  for (size_t i = 0; i < libs.count; i++) {
-    CMD("cp", CONCAT("target/lib", libs.elems[i], ".so"),
-        CONCAT(prefix, "lib/"));
-    CMD("cp", CONCAT("include/", libs.elems[i], ".h"),
-        CONCAT(prefix, "include/"));
-  }
-  INFO("Installed Successfully");
 }
 
 void *obj_build_ptr(void *input) {
@@ -883,18 +677,8 @@ void obj_build_threaded(Cstr_Array comp_flags) {
 }
 
 void obj_build(Cstr feature, Cstr_Array comp_flags) {
-  Cstr_Array objs = CSTRS();
-  int is_lib = 0;
-  for (size_t i = 0; i < libs.count; i++) {
-    if (strcmp(libs.elems[i], feature) == 0) {
-      is_lib++;
-    }
-  }
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
-    if (is_lib) {
-      objs = cstr_array_append(objs, output);
-    }
     Cmd obj_cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
     obj_cmd.line = cstr_array_concat(obj_cmd.line, comp_flags);
     Cstr_Array arr = cstr_array_make("-fPIC", "-o", output, "-c", NULL);
@@ -904,25 +688,6 @@ void obj_build(Cstr feature, Cstr_Array comp_flags) {
     INFO("CMD: %s", cmd_show(obj_cmd));
     cmd_run_sync(obj_cmd);
   });
-  if (is_lib) {
-    Cstr_Array local_deps = CSTRS();
-    local_deps = deps_get_manual(feature, local_deps);
-    Cmd obj_cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
-    obj_cmd.line = cstr_array_concat(obj_cmd.line, comp_flags);
-    Cstr_Array arr = cstr_array_make(
-        "-shared", "-o", CONCAT("target/lib", feature, ".so"), NULL);
-    obj_cmd.line = cstr_array_concat(obj_cmd.line, arr);
-    for (size_t i = local_deps.count - 1; i > 0; i--) {
-      FOREACH_FILE_IN_DIR(file, CONCAT("src/", local_deps.elems[i]), {
-        Cstr output =
-            CONCAT("obj/", local_deps.elems[i], "/", NOEXT(file), ".o");
-        objs = cstr_array_append(objs, output);
-      });
-    }
-    obj_cmd.line = cstr_array_concat(obj_cmd.line, objs);
-    INFO("CMD: %s", cmd_show(obj_cmd));
-    cmd_run_sync(obj_cmd);
-  }
 }
 
 void manual_deps(Cstr feature, Cstr_Array man_deps) {
@@ -975,22 +740,10 @@ void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links) {
       cmd.line, cstr_array_make("-o", CONCAT("target/", feature),
                                 CONCAT("tests/", feature, ".c"), NULL));
 
-#ifdef NOMOCKS
-  Cstr_Array local_deps = CSTRS();
-  local_deps = deps_get_manual(feature, local_deps);
-  for (int j = local_deps.count - 1; j >= 0; j--) {
-    Cstr curr_feature = local_deps.elems[j];
-    FOREACH_FILE_IN_DIR(file, curr_feature, {
-      Cstr output = CONCAT("obj/", curr_feature, "/", NOEXT(file), ".o");
-      cmd.line = cstr_array_append(cmd.line, output);
-    });
-  }
-#else
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
     cmd.line = cstr_array_append(cmd.line, output);
   });
-#endif
   INFO("CMD: %s", cmd_show(cmd));
   cmd_run_sync(cmd);
 }
@@ -1051,9 +804,6 @@ void build(Cstr_Array comp_flags) {
     for (size_t k = 1; k < features[i].count; k++) {
       links = cstr_array_append(links, features[i].elems[k]);
     }
-    // obj_build(features[i].elems[0], comp_flags);
-    // obj_build_threaded(features[i].elems[0], comp_flags);
-    // test_build(features[i].elems[0], comp_flags, links);
     if (skip_tests == 0) {
       test_build(features[i].elems[0], comp_flags, links);
       EXEC_TESTS(features[i].elems[0]);
@@ -1075,26 +825,6 @@ void build(Cstr_Array comp_flags) {
 }
 
 void pid_wait(Pid pid) {
-#ifdef _WIN32
-  DWORD result = WaitForSingleObject(pid,     // HANDLE hHandle,
-                                     INFINITE // DWORD  dwMilliseconds
-  );
-
-  if (result == WAIT_FAILED) {
-    PANIC("could not wait on child process: %s", GetLastErrorAsString());
-  }
-
-  DWORD exit_status;
-  if (GetExitCodeProcess(pid, &exit_status) == 0) {
-    PANIC("could not get process exit code: %lu", GetLastError());
-  }
-
-  if (exit_status != 0) {
-    PANIC("command exited with exit code %lu", exit_status);
-  }
-
-  CloseHandle(pid);
-#else
   for (;;) {
     int wstatus = 0;
     if (waitpid(pid, &wstatus, 0) < 0) {
@@ -1112,44 +842,11 @@ void pid_wait(Pid pid) {
       PANIC("command process was terminated by %d", WTERMSIG(wstatus));
     }
   }
-#endif
 }
 
 Cstr cmd_show(Cmd cmd) { return cstr_array_join(" ", cmd.line); }
 
 Pid cmd_run_async(Cmd cmd) {
-#ifdef _WIN32
-  // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
-
-  STARTUPINFO siStartInfo;
-  ZeroMemory(&siStartInfo, sizeof(siStartInfo));
-  siStartInfo.cb = sizeof(STARTUPINFO);
-  // NOTE: theoretically setting NULL to std handles should not be a problem
-  // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
-  siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
-  // TODO(#32): check for errors in GetStdHandle
-  siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-  PROCESS_INFORMATION piProcInfo;
-  ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
-
-  BOOL bSuccess = CreateProcess(
-      NULL,
-      // TODO(#33): cmd_run_async on Windows does not render command line
-      // properly It may require wrapping some arguments with double-quotes if
-      // they contains spaces, etc.
-      (char *)cstr_array_join(" ", cmd.line), NULL, NULL, TRUE, 0, NULL, NULL,
-      &siStartInfo, &piProcInfo);
-
-  if (!bSuccess) {
-    PANIC("Could not create child process %s: %s\n", cmd_show(cmd),
-          GetLastErrorAsString());
-  }
-
-  CloseHandle(piProcInfo.hThread);
-
-  return piProcInfo.hProcess;
-#else
   pid_t cpid = fork();
   if (cpid < 0) {
     PANIC("Could not fork child process: %s: %s", cmd_show(cmd),
@@ -1162,14 +859,12 @@ Pid cmd_run_async(Cmd cmd) {
     }
   }
   return cpid;
-#endif
 }
 
 void cmd_run_sync(Cmd cmd) { pid_wait(cmd_run_async(cmd)); }
 void test_run_sync(Cmd cmd) { test_pid_wait(cmd_run_async(cmd)); }
 
 int path_is_dir(Cstr path) {
-#ifndef _WIN32
   struct stat statbuf = {0};
   if (stat(path, &statbuf) < 0) {
     if (errno == ENOENT) {
@@ -1182,12 +877,6 @@ int path_is_dir(Cstr path) {
   }
 
   return S_ISDIR(statbuf.st_mode);
-#else
-  DWORD dwAttrib = GetFileAttributes(path);
-
-  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-          (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-#endif
 }
 
 void path_rename(const char *old_path, const char *new_path) {
@@ -1224,7 +913,6 @@ void path_mkdirs(Cstr_Array path) {
     }
 
     result[len] = '\0';
-#ifndef _WIN32
     if (mkdir(result, 0755) < 0) {
       if (errno == EEXIST) {
         errno = 0;
@@ -1232,15 +920,6 @@ void path_mkdirs(Cstr_Array path) {
         PANIC("could not create directory %s: %s", result, strerror(errno));
       }
     }
-#else
-    if (_mkdir(result) < 0) {
-      if (errno == EEXIST) {
-        errno = 0;
-      } else {
-        PANIC("could not create directory %s: %s", result, strerror(errno));
-      }
-    }
-#endif
   }
 }
 
