@@ -139,19 +139,8 @@ typedef struct {
   short passed_total;
 } result_t;
 typedef struct {
-  Cstr *elems;
-  size_t count;
-} Cstr_Array;
-typedef struct {
-  Cstr_Array line;
-} Cmd;
-typedef struct {
-  Cmd *elems;
-  size_t count;
-} Cmd_Array;
-typedef struct {
   Cstr *feature;
-  Cstr_Array *array;
+  cstrs_l *array;
 } thread_data_t;
 
 // statics
@@ -173,32 +162,30 @@ static int skip_tests = 0;
 static result_t results = {0, 0};
 static cstrs_l features = {0, 0, 0};
 static cstrs_l deps = {0, 0, 0};
-static Cstr_Array *exes = NULL;
-static size_t exe_count = 0;
+static cstrs_l exes = {0, 0, 0};
 
 // forwards
-Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed);
+cstrs_l *deps_get_manual(Cstr feature, cstrs_l *processed);
 void initialize();
-Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed);
-Cstr_Array cstr_array_concat(Cstr_Array cstrs1, Cstr_Array cstrs2);
+cstrs_l *incremental_build(Cstr parsed, cstrs_l processed);
+void cstrs_l_concat(cstrs_l cstrs1, cstrs_l cstrs2);
 int cstr_ends_with(Cstr cstr, Cstr postfix);
 Cstr cstr_no_ext(Cstr path);
-Cstr_Array cstr_array_make(Cstr first, ...);
-Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr);
-Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs);
+cstrs_l cstrs_l_make(Cstr first, ...);
+void cstrs_l_append(cstrs_l cstrs, Cstr cstr);
+Cstr cstrs_l_join(Cstr sep, cstrs_l cstrs);
 Fd fd_open_for_read(Cstr path, int exit);
 Fd fd_open_for_write(Cstr path);
 void fd_close(Fd fd);
 void release();
 void debug();
-void build(Cstr_Array comp_flags);
-void obj_build(Cstr feature, Cstr_Array comp_flags);
-void obj_build_threaded(Cstr_Array comp_flags);
-void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
-void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
-Cstr_Array deps_get_lifted(Cstr file, Cstr_Array processed);
-void manual_deps(Cstr feature, Cstr_Array deps);
-void add_exe(Cstr_Array val);
+void build(cstrs_l *comp_flags);
+void obj_build(Cstr feature, cstrs_l *comp_flags);
+void obj_build_threaded(cstrs_l *comp_flags);
+void test_build(Cstr feature, cstrs_l *comp_flags, cstrs_l *feature_links);
+void exe_build(Cstr feature, cstrs_l *comp_flags, cstrs_l *deps);
+cstrs_l *deps_get_lifted(Cstr file, cstrs_l *processed);
+void manual_deps(Cstr feature, cstrs_l *deps);
 void pid_wait(Pid pid);
 void test_pid_wait(Pid pid);
 int handle_args(int argc, char **argv);
@@ -207,12 +194,12 @@ void make_exe(Cstr val);
 void write_report();
 void create_folders();
 Cstr parse_feature_from_path(Cstr path);
-Cstr cmd_show(Cmd cmd);
-Pid cmd_run_async(Cmd cmd);
-void cmd_run_sync(Cmd cmd);
-void test_run_sync(Cmd cmd);
+Cstr cmd_show(cstr_l cmd);
+Pid cmd_run_async(cstr_l cmd);
+void cmd_run_sync(cstr_l cmd);
+void test_run_sync(cstr_l cmd);
 int path_is_dir(Cstr path);
-void path_mkdirs(Cstr_Array path);
+void path_mkdirs(cstrs_l path);
 void path_rename(Cstr old_path, Cstr new_path);
 void path_rm(Cstr path);
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
@@ -230,6 +217,7 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
   do {                                                                         \
     features = cstrs_new();                                                    \
     deps = cstrs_new();                                                        \
+    exes = cstrs_new();                                                        \
   } while (0);
 
 #define FOREACH_ARRAY(type, elem, array, body)                                 \
@@ -238,12 +226,9 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     body;                                                                      \
   }
 
-#define CSTRS()                                                                \
-  { .elems = NULL, .count = 0 }
-
 #define ENDS_WITH(cstr, postfix) cstr_ends_with(cstr, postfix)
 #define NOEXT(path) cstr_no_ext(path)
-#define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__, NULL))
+#define JOIN(sep, ...) cstrs_l_join(sep, cstrs_l_make(__VA_ARGS__, NULL))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 
@@ -256,13 +241,15 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define EXE(...)                                                               \
   do {                                                                         \
-    Cstr_Array exes_macro = cstr_array_make(__VA_ARGS__, NULL);                \
-    add_exe(exes_macro);                                                       \
+    cstr_l new_exe = cstr_str_new();                                           \
+    cstr_l_add_varargs(&new_exe, __VA_ARGS__, NULL);                           \
+    cstrs_add(&exes, new_exe);                                                 \
   } while (0)
 
 #define CMD(...)                                                               \
   do {                                                                         \
-    Cmd cmd = {.line = cstr_array_make(__VA_ARGS__, NULL)};                    \
+    cstr_l cmd = cstr_str_new();                                               \
+    cstr_l_add_varargs(&cmd __VA_ARGS__, NULL);                                \
     INFO("CMD: %s", cmd_show(cmd));                                            \
     cmd_run_sync(cmd);                                                         \
   } while (0)
@@ -283,7 +270,7 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 #define EXEC_TESTS(feature)                                                    \
   do {                                                                         \
     Cmd cmd = {                                                                \
-        .line = cstr_array_make(CONCAT("target/", feature), NULL),             \
+        .line = cstrs_l_make(CONCAT("target/", feature), NULL),                \
     };                                                                         \
     INFO("CMD: %s", cmd_show(cmd));                                            \
     test_run_sync(cmd);                                                        \
@@ -319,8 +306,8 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define MKDIRS(...)                                                            \
   do {                                                                         \
-    Cstr_Array path = cstr_array_make(__VA_ARGS__, NULL);                      \
-    INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path));                       \
+    cstrs_l path = cstrs_l_make(__VA_ARGS__, NULL);                            \
+    INFO("MKDIRS: %s", cstrs_l_join(PATH_SEP, path));                          \
     path_mkdirs(path);                                                         \
   } while (0)
 
@@ -355,14 +342,6 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef NOBUILD_IMPLEMENTATION
-
-Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr) {
-  Cstr_Array result = {.count = cstrs.count + 1};
-  result.elems = malloc(sizeof(result.elems[0]) * result.count);
-  memcpy(result.elems, cstrs.elems, cstrs.count * sizeof(result.elems[0]));
-  result.elems[cstrs.count] = cstr;
-  return result;
-}
 
 int cstr_ends_with(Cstr cstr, Cstr postfix) {
   const size_t cstr_len = strlen(cstr);
@@ -410,19 +389,6 @@ void update_results() {
   }
 }
 
-void add_exe(Cstr_Array val) {
-  if (exes == NULL) {
-    exes = malloc(sizeof(Cstr_Array));
-    exe_count++;
-  } else {
-    exes = realloc(exes, sizeof(Cstr_Array) * ++exe_count);
-  }
-  if (exes == NULL || val.count == 0) {
-    PANIC("could not allocate memory: %s", strerror(errno));
-  }
-  memcpy(&exes[exe_count - 1], &val, sizeof(Cstr_Array));
-}
-
 void cstr_l_add_varargs(cstr_l *val, char *first, ...) {
   if (first == NULL) {
     return;
@@ -437,8 +403,8 @@ void cstr_l_add_varargs(cstr_l *val, char *first, ...) {
   return;
 }
 
-Cstr_Array cstr_array_make(Cstr first, ...) {
-  Cstr_Array result = CSTRS();
+cstrs_l cstrs_l_make(Cstr first, ...) {
+  cstrs_l result = CSTRS();
   size_t local_count = 0;
   if (first == NULL) {
     return result;
@@ -470,51 +436,38 @@ Cstr_Array cstr_array_make(Cstr first, ...) {
   return result;
 }
 
-Cstr_Array cstr_array_concat(Cstr_Array cstrs1, Cstr_Array cstrs2) {
-  if (cstrs1.count == 0 && cstrs2.count == 0) {
-    Cstr_Array temp = CSTRS();
-    return temp;
-  } else if (cstrs1.count == 0) {
-    return cstrs2;
-  } else if (cstrs2.count == 0) {
-    return cstrs1;
+void cstrs_l_concat(cstrs_l *cstrs1, cstrs_l *cstrs2) {
+  for (size_t i = 0; i < cstrs2->len; i++;) {
+    cstrs_add(cstrs1, cstrs2.data[i]);
   }
-
-  cstrs1.elems =
-      realloc(cstrs1.elems, sizeof(Cstr *) * (cstrs1.count + cstrs2.count));
-
-  memcpy(&cstrs1.elems[cstrs1.count], &cstrs2.elems[0],
-         sizeof(Cstr *) * cstrs2.count);
-  cstrs1.count += cstrs2.count;
-  return cstrs1;
 }
 
-Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs) {
-  if (cstrs.count == 0) {
+Cstr cstr_l_join(Cstr sep, cstr_l *cstrs) {
+  if (cstrs->len == 0) {
     return "";
   }
 
   const size_t sep_len = strlen(sep);
   size_t len = 0;
-  for (size_t i = 0; i < cstrs.count; ++i) {
-    len += strlen(cstrs.elems[i]);
+  for (size_t i = 0; i < cstrs->len; ++i) {
+    len += strlen(cstrs->data[i]);
   }
 
-  const size_t result_len = (cstrs.count - 1) * sep_len + len + 1;
+  const size_t result_len = (cstrs->len - 1) * sep_len + len + 1;
   char *result = malloc(sizeof(char) * result_len);
   if (result == NULL) {
     PANIC("could not allocate memory: %s", strerror(errno));
   }
 
   len = 0;
-  for (size_t i = 0; i < cstrs.count; ++i) {
+  for (size_t i = 0; i < cstrs->len; ++i) {
     if (i > 0) {
       memcpy(result + len, sep, sep_len);
       len += sep_len;
     }
 
-    size_t elem_len = strlen(cstrs.elems[i]);
-    memcpy(result + len, cstrs.elems[i], elem_len);
+    size_t elem_len = strlen(cstrs->data[i]);
+    memcpy(result + len, cstrs->data[i], elem_len);
     len += elem_len;
   }
   result[len] = '\0';
@@ -611,29 +564,29 @@ int handle_args(int argc, char **argv) {
   }
   if (b) {
     Cstr parsed = parse_feature_from_path(opt_b);
-    Cstr_Array local_comp = cstr_array_make(DCOMP, NULL);
-    Cstr_Array links = CSTRS();
+    cstrs_l local_comp = cstrs_l_make(DCOMP, NULL);
+    cstrs_l links = cstrs_new();
     for (size_t j = 0; j < features.len; j++) {
       if (strcmp(parsed, features.data[j].data[0]) == 0) {
         for (size_t k = 1; k < features.data[j].len; k++) {
-          links = cstr_array_append(links, features.data[j].data[k]);
+          links = cstrs_l_append(links, features.data[j].data[k]);
         }
 
         obj_build(parsed, local_comp);
         test_build(parsed, local_comp, links);
         EXEC_TESTS(parsed);
-        links.elems = NULL;
-        links.count = 0;
+        links.data = NULL;
+        links.len = 0;
       }
     }
-    Cstr_Array exe_deps = CSTRS();
-    for (size_t i = 0; i < exe_count; i++) {
-      for (size_t k = 1; k < exes[i].count; k++) {
-        exe_deps = cstr_array_append(links, exes[i].elems[k]);
+    cstrs_l exe_deps = cstrs_new();
+    for (size_t i = 0; i < exes.len; i++) {
+      for (size_t k = 1; k < exes.data[i].len; k++) {
+        cstrs_l_append(exe_deps, exes.data[i].data[k]);
       }
-      exe_build(exes[i].elems[0], local_comp, exe_deps);
-      exe_deps.elems = NULL;
-      exe_deps.count = 0;
+      exe_build(exes.data[i].data[0], local_comp, exe_deps);
+      exe_deps.data = NULL;
+      exe_deps.len = 0;
     }
 
     RESULTS();
@@ -661,7 +614,7 @@ void initialize() {
   MKDIRS("src");
   MKDIRS("tests");
   MKDIRS("include");
-  Cmd cmd = {.line = cstr_array_make(
+  Cmd cmd = {.line = cstrs_l_make(
                  "/bin/bash", "-c",
                  "echo -e '\n# nobuild\nnobuild\ntarget\ndeps\nobj\n' >> "
                  ".gitignore",
@@ -726,48 +679,48 @@ void *obj_build_ptr(void *input) {
   return NULL;
 }
 
-void obj_build_threaded(Cstr_Array comp_flags) {
+void obj_build_threaded(cstrs_l comp_flags) {
   pthread_t *tid = malloc(sizeof(pthread_t) * features.len);
-  Cstr_Array links = CSTRS();
+  cstrs_l links = cstrs_new();
   for (size_t i = 0; i < features.len; i++) {
     for (size_t k = 1; k < features.data[i].len; k++) {
-      links = cstr_array_append(links, features.data[i].data[k]);
+      cstrs_l_append(links, features.data[i].data[k]);
     }
     thread_data_t *data = malloc(sizeof(thread_data_t));
     data->feature = &features.data[i].data[0];
     data->array = &comp_flags;
     pthread_create(&tid[i], NULL, obj_build_ptr, (void *)data);
-    links.elems = NULL;
-    links.count = 0;
+    links.data = NULL;
+    links.len = 0;
   }
   for (size_t i = 0; i < features.len; i++) {
     pthread_join(tid[i], NULL);
   }
 }
 
-void obj_build(Cstr feature, Cstr_Array comp_flags) {
+void obj_build(Cstr feature, cstrs_l comp_flags) {
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
-    Cmd obj_cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
-    obj_cmd.line = cstr_array_concat(obj_cmd.line, comp_flags);
-    Cstr_Array arr = cstr_array_make("-fPIC", "-o", output, "-c", NULL);
-    obj_cmd.line = cstr_array_concat(obj_cmd.line, arr);
+    Cmd obj_cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
+    obj_cmd.line = cstrs_l_concat(obj_cmd.line, comp_flags);
+    cstrs_l arr = cstrs_l_make("-fPIC", "-o", output, "-c", NULL);
+    obj_cmd.line = cstrs_l_concat(obj_cmd.line, arr);
     obj_cmd.line =
-        cstr_array_append(obj_cmd.line, CONCAT("src/", feature, "/", file));
+        cstrs_l_append(obj_cmd.line, CONCAT("src/", feature, "/", file));
     INFO("CMD: %s", cmd_show(obj_cmd));
     cmd_run_sync(obj_cmd);
   });
 }
 
-Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed) {
+cstrs_l *deps_get_manual(Cstr feature, cstrs_l *processed) {
   int proc_found = 0;
-  for (size_t i = 0; i < processed.count; i++) {
-    if (strcmp(processed.elems[i], feature) == 0) {
+  for (size_t i = 0; i < processed->len; i++) {
+    if (strcmp(processed->data[i], feature) == 0) {
       proc_found += 1;
     }
   }
   if (proc_found == 0) {
-    processed = cstr_array_append(processed, feature);
+    cstrs_l_append(processed, feature);
     for (size_t i = 0; i < deps.len; i++) {
       if (strcmp(deps.data[i].data[0], feature) == 0) {
         for (size_t j = 1; j < deps.data[i].len; j++) {
@@ -787,28 +740,28 @@ Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed) {
   return processed;
 }
 
-void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links) {
-  Cmd cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
-  cmd.line = cstr_array_concat(cmd.line, feature_links);
-  cmd.line = cstr_array_concat(cmd.line, comp_flags);
-  cmd.line = cstr_array_concat(
-      cmd.line, cstr_array_make("-o", CONCAT("target/", feature),
-                                CONCAT("tests/", feature, ".c"), NULL));
+void test_build(Cstr feature, cstrs_l comp_flags, cstrs_l feature_links) {
+  Cmd cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
+  cmd.line = cstrs_l_concat(cmd.line, feature_links);
+  cmd.line = cstrs_l_concat(cmd.line, comp_flags);
+  cmd.line = cstrs_l_concat(
+      cmd.line, cstrs_l_make("-o", CONCAT("target/", feature),
+                             CONCAT("tests/", feature, ".c"), NULL));
 
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
-    cmd.line = cstr_array_append(cmd.line, output);
+    cmd.line = cstrs_l_append(cmd.line, output);
   });
   INFO("CMD: %s", cmd_show(cmd));
   cmd_run_sync(cmd);
 }
 
-void exe_build(Cstr exe, Cstr_Array comp_flags, Cstr_Array exe_deps) {
-  Cmd cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
-  cmd.line = cstr_array_concat(cmd.line, comp_flags);
-  Cstr_Array local_deps = CSTRS();
-  Cstr_Array local_links = CSTRS();
-  Cstr_Array output_list = CSTRS();
+void exe_build(Cstr exe, cstrs_l comp_flags, cstrs_l exe_deps) {
+  Cmd cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
+  cmd.line = cstrs_l_concat(cmd.line, comp_flags);
+  cstrs_l local_deps = CSTRS();
+  cstrs_l local_links = CSTRS();
+  cstrs_l output_list = CSTRS();
   for (size_t i = 0; i < exe_deps.count; i++) {
     local_deps = deps_get_manual(exe_deps.elems[i], local_deps);
   }
@@ -816,31 +769,30 @@ void exe_build(Cstr exe, Cstr_Array comp_flags, Cstr_Array exe_deps) {
     for (size_t k = 0; k < features.len; k++) {
       if (strcmp(local_deps.elems[i], features.data[k].data[0]) == 0) {
         for (size_t l = 1; l < features.data[k].len; l++) {
-          local_links =
-              cstr_array_append(local_links, features.data[k].data[l]);
+          local_links = cstrs_l_append(local_links, features.data[k].data[l]);
         }
         FOREACH_FILE_IN_DIR(file, CONCAT("src/", features.data[k].data[0]), {
           Cstr output =
               CONCAT("obj/", features.data[k].data[0], "/", NOEXT(file), ".o");
-          output_list = cstr_array_append(output_list, output);
+          output_list = cstrs_l_append(output_list, output);
         });
       }
     }
   }
-  cmd.line = cstr_array_concat(cmd.line, local_links);
-  cmd.line = cstr_array_concat(
-      cmd.line, cstr_array_make("-o", CONCAT("target/", exe),
-                                CONCAT("exes/", exe, ".c"), NULL));
+  cmd.line = cstrs_l_concat(cmd.line, local_links);
+  cmd.line =
+      cstrs_l_concat(cmd.line, cstrs_l_make("-o", CONCAT("target/", exe),
+                                            CONCAT("exes/", exe, ".c"), NULL));
 
-  cmd.line = cstr_array_concat(cmd.line, output_list);
+  cmd.line = cstrs_l_concat(cmd.line, output_list);
   INFO("CMD: %s", cmd_show(cmd));
   cmd_run_sync(cmd);
 }
 
-void release() { build(cstr_array_make(RCOMP, NULL)); }
+void release() { build(cstrs_l_make(RCOMP, NULL)); }
 
-Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
-  processed = cstr_array_append(processed, parsed);
+cstrs_l incremental_build(Cstr parsed, cstrs_l processed) {
+  processed = cstrs_l_append(processed, parsed);
   for (size_t i = 0; i < deps.len; i++) {
     for (size_t j = 1; j < deps.data[i].len; j++) {
       if (strcmp(deps.data[i].data[j], parsed) == 0) {
@@ -851,14 +803,14 @@ Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
   return processed;
 }
 
-void debug() { build(cstr_array_make(DCOMP, NULL)); }
+void debug() { build(cstrs_l_make(DCOMP, NULL)); }
 
-void build(Cstr_Array comp_flags) {
-  Cstr_Array links = CSTRS();
+void build(cstrs_l comp_flags) {
+  cstrs_l links = CSTRS();
   obj_build_threaded(comp_flags);
   for (size_t i = 0; i < features.len; i++) {
     for (size_t k = 1; k < features.data[i].len; k++) {
-      links = cstr_array_append(links, features.data[i].data[k]);
+      links = cstrs_l_append(links, features.data[i].data[k]);
     }
     if (skip_tests == 0) {
       test_build(features.data[i].data[0], comp_flags, links);
@@ -867,12 +819,12 @@ void build(Cstr_Array comp_flags) {
     links.elems = NULL;
     links.count = 0;
   }
-  Cstr_Array exe_deps = CSTRS();
-  for (size_t i = 0; i < exe_count; i++) {
-    for (size_t k = 1; k < exes[i].count; k++) {
-      exe_deps = cstr_array_append(links, exes[i].elems[k]);
+  cstrs_l exe_deps = CSTRS();
+  for (size_t i = 0; i < exes.len; i++) {
+    for (size_t k = 1; k < exes.data[i].len; k++) {
+      exe_deps = cstrs_l_append(links, exes.data[i].data[k]);
     }
-    exe_build(exes[i].elems[0], comp_flags, exe_deps);
+    exe_build(exes.data[i].data[0], comp_flags, exe_deps);
     exe_deps.elems = NULL;
     exe_deps.count = 0;
   }
@@ -900,7 +852,7 @@ void pid_wait(Pid pid) {
   }
 }
 
-Cstr cmd_show(Cmd cmd) { return cstr_array_join(" ", cmd.line); }
+Cstr cmd_show(Cmd cmd) { return cstrs_l_join(" ", cmd.line); }
 
 Pid cmd_run_async(Cmd cmd) {
   pid_t cpid = fork();
@@ -909,7 +861,7 @@ Pid cmd_run_async(Cmd cmd) {
           strerror(errno));
   }
   if (cpid == 0) {
-    Cstr_Array args = cstr_array_append(cmd.line, NULL);
+    cstrs_l args = cstrs_l_append(cmd.line, NULL);
     if (execvp(args.elems[0], (char *const *)args.elems) < 0) {
       PANIC("Could not exec child process: %s: %d", cmd_show(cmd), errno);
     }
@@ -941,25 +893,25 @@ void path_rename(char *old_path, char *new_path) {
   }
 }
 
-void path_mkdirs(Cstr_Array path) {
-  if (path.count == 0) {
+void path_mkdirs(cstrs_l path) {
+  if (path.len == 0) {
     return;
   }
 
   size_t len = 0;
-  for (size_t i = 0; i < path.count; ++i) {
-    len += strlen(path.elems[i]);
+  for (size_t i = 0; i < path.len; ++i) {
+    len += strlen(path.data[i]);
   }
 
-  size_t seps_count = path.count - 1;
+  size_t seps_count = path.len - 1;
   const size_t sep_len = strlen(PATH_SEP);
 
   char *result = malloc(len + seps_count * sep_len + 1);
 
   len = 0;
   for (size_t i = 0; i < path.count; ++i) {
-    size_t n = strlen(path.elems[i]);
-    memcpy(result + len, path.elems[i], n);
+    size_t n = strlen(path.data[i]);
+    memcpy(result + len, path.data[i], n);
     len += n;
 
     if (seps_count > 0) {
