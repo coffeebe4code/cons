@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
   FEATURE("error");
   FEATURE("cli");
   FEATURE("pros");
-  EXE("cons-repl", "cli");
   DEPS("lex", "lexeme", "token", "span");
   DEPS("vm", "byte");
   DEPS("pros", "list", "byte");
@@ -28,6 +27,8 @@ int main(int argc, char **argv) {
   DEPS("ast", "lexeme", "token", "span");
   DEPS("parse", "ast", "lex", "lexeme", "span");
   DEPS("ir", "ast", "pros", "byte", "gen");
+  EXE("cons-repl", "cli", "ast", "ir", "lex", "lexeme", "parse", "pros",
+      "token", "vm");
   BOOTSTRAP(argc, argv);
   return 0;
 }
