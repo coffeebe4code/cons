@@ -4,6 +4,7 @@
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {
+  INITIALIZE();
   FEATURE("token");
   FEATURE("list");
   FEATURE("span");

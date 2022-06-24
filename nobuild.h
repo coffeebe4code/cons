@@ -62,8 +62,78 @@ long int cmd_sutime = 0;
 #define ANSI_COLOR_CYAN "\x1b[36m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
+typedef char *Cstr;
+void INFO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
+
+#define LIST_DECL_NB(type, name)                                               \
+  typedef struct {                                                             \
+    size_t len;                                                                \
+    size_t cap;                                                                \
+    type *data;                                                                \
+  } name##_l;
+
+#define LIST_USE_NB(type, name, capacity)                                      \
+  name##_l name##_new() {                                                      \
+    name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
+    val.data = (type *)calloc(sizeof(type), capacity);                         \
+    return val;                                                                \
+  }                                                                            \
+                                                                               \
+  int name##_add(name##_l *list, type val) {                                   \
+    if (list->cap <= list->len) {                                              \
+      type *temp = NULL;                                                       \
+      list->cap <<= 1;                                                         \
+      temp = (type *)realloc(list->data, list->cap * sizeof(type));            \
+      if (temp == NULL) {                                                      \
+        list->cap >>= 1;                                                       \
+        list->cap++;                                                           \
+        temp = (type *)realloc(list->data, (list->cap) * sizeof(type));        \
+        if (temp == NULL) {                                                    \
+          return 1;                                                            \
+        }                                                                      \
+      }                                                                        \
+      list->data = temp;                                                       \
+    }                                                                          \
+    memcpy(&list->data[list->len++], &val, sizeof(type));                      \
+    return 0;                                                                  \
+  }                                                                            \
+  void name##_free(name##_l *list) { free(list->data); }
+
+#define LIST_STRUSE_NB(type, name, capacity)                                   \
+  name##_l name##_str_new() {                                                  \
+    name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
+    val.data = (type *)calloc(sizeof(type), capacity);                         \
+    return val;                                                                \
+  }                                                                            \
+                                                                               \
+  int name##_str_add(name##_l *list, type val) {                               \
+    type data = (char *)calloc(sizeof(char), strlen(val));                     \
+    strcpy(data, val);                                                         \
+    if (list->cap <= list->len) {                                              \
+      type *temp = NULL;                                                       \
+      list->cap <<= 1;                                                         \
+      temp = (type *)realloc(list->data, list->cap * sizeof(type));            \
+      if (temp == NULL) {                                                      \
+        list->cap >>= 1;                                                       \
+        list->cap++;                                                           \
+        temp = (type *)realloc(list->data, (list->cap) * sizeof(type));        \
+        if (temp == NULL) {                                                    \
+          return 1;                                                            \
+        }                                                                      \
+      }                                                                        \
+      list->data = temp;                                                       \
+    }                                                                          \
+    list->data[list->len] = data;                                              \
+    list->len++;                                                               \
+    return 0;                                                                  \
+  }                                                                            \
+  void name##_free(name##_l *list) { free(list->data); }
+
 // typedefs
-typedef const char *Cstr;
+LIST_DECL_NB(char *, cstr);
+LIST_STRUSE_NB(char *, cstr, 5);
+LIST_DECL_NB(cstr_l, cstrs);
+LIST_USE_NB(cstr_l, cstrs, 5);
 typedef struct {
   short failure_total;
   short passed_total;
@@ -101,11 +171,9 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
 
 static int skip_tests = 0;
 static result_t results = {0, 0};
-static Cstr_Array *features = NULL;
-static Cstr_Array *deps = NULL;
+static cstrs_l features = {0, 0, 0};
+static cstrs_l deps = {0, 0, 0};
 static Cstr_Array *exes = NULL;
-static size_t feature_count = 0;
-static size_t deps_count = 0;
 static size_t exe_count = 0;
 
 // forwards
@@ -130,12 +198,11 @@ void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
 void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
 Cstr_Array deps_get_lifted(Cstr file, Cstr_Array processed);
 void manual_deps(Cstr feature, Cstr_Array deps);
-void add_feature(Cstr_Array val);
 void add_exe(Cstr_Array val);
 void pid_wait(Pid pid);
 void test_pid_wait(Pid pid);
 int handle_args(int argc, char **argv);
-void make_feature(Cstr val);
+void make_feature(char *val);
 void make_exe(Cstr val);
 void write_report();
 void create_folders();
@@ -150,7 +217,6 @@ void path_rename(Cstr old_path, Cstr new_path);
 void path_rm(Cstr path);
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
 void TABLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
-void INFO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void WARN(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void ERRO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void PANIC(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
@@ -160,6 +226,12 @@ void RUNLOG(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 // macros
+#define INITIALIZE()                                                           \
+  do {                                                                         \
+    features = cstrs_new();                                                    \
+    deps = cstrs_new();                                                        \
+  } while (0);
+
 #define FOREACH_ARRAY(type, elem, array, body)                                 \
   for (size_t elem_##index = 0; elem_##index < array.count; ++elem_##index) {  \
     type *elem = &array.elems[elem_##index];                                   \
@@ -177,8 +249,9 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define DEPS(first, ...)                                                       \
   do {                                                                         \
-    Cstr_Array macro_deps = cstr_array_make(__VA_ARGS__, NULL);                \
-    manual_deps(first, macro_deps);                                            \
+    cstr_l new_dep = cstr_str_new();                                           \
+    cstr_l_add_varargs(&new_dep, __VA_ARGS__, NULL);                           \
+    cstrs_add(&deps, new_dep);                                                 \
   } while (0)
 
 #define EXE(...)                                                               \
@@ -232,19 +305,14 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define FEATURE(...)                                                           \
   do {                                                                         \
-    Cstr_Array val = cstr_array_make(__VA_ARGS__, NULL);                       \
-    add_feature(val);                                                          \
+    cstr_l new_feature = cstr_str_new();                                       \
+    cstr_l_add_varargs(&new_feature, __VA_ARGS__, NULL);                       \
+    cstrs_add(&features, new_feature);                                         \
   } while (0)
 
 #define BOOTSTRAP(argc, argv)                                                  \
   do {                                                                         \
     handle_args(argc, argv);                                                   \
-  } while (0)
-
-#define RETURN()                                                               \
-  do {                                                                         \
-    write_report(CONCAT("target/nobuild/", features[0].elems[0], ".report"));  \
-    return results.failure_total;                                              \
   } while (0)
 
 #define IS_DIR(path) path_is_dir(path)
@@ -272,7 +340,7 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     errno = 0;                                                                 \
     while ((dp = readdir(dir))) {                                              \
       if (strncmp(dp->d_name, ".", sizeof(char)) != 0) {                       \
-        const char *file = dp->d_name;                                         \
+        char *file = dp->d_name;                                               \
         body;                                                                  \
       }                                                                        \
     }                                                                          \
@@ -323,36 +391,23 @@ Cstr cstr_no_ext(Cstr path) {
 void create_folders() {
   MKDIRS("target", "nobuild");
   MKDIRS("obj");
-  for (size_t i = 0; i < feature_count; i++) {
-    MKDIRS(CONCAT("obj/", features[i].elems[0]));
+  for (size_t i = 0; i < features.len; i++) {
+    MKDIRS(CONCAT("obj/", features.data[i].data[0]));
   }
 }
 
 void update_results() {
-  for (size_t i = 0; i < feature_count; i++) {
+  for (size_t i = 0; i < features.len; i++) {
     Fd fd = fd_open_for_read(
-        CONCAT("target/nobuild/", features[i].elems[0], ".report"), 1);
+        CONCAT("target/nobuild/", features.data[i].data[0], ".report"), 1);
     int number;
     if (fscanf((FILE *)fd, "%d", &number) == 0) {
       PANIC("couldn't read from file %s",
-            CONCAT("target/nobuild/", features[i].elems[0], ".report"));
+            CONCAT("target/nobuild/", features.data[i].data[0], ".report"));
     }
     results.passed_total += number;
     fclose(fd);
   }
-}
-
-void add_feature(Cstr_Array val) {
-  if (features == NULL) {
-    features = malloc(sizeof(Cstr_Array));
-    feature_count++;
-  } else {
-    features = realloc(features, sizeof(Cstr_Array) * ++feature_count);
-  }
-  if (features == NULL || val.count == 0) {
-    PANIC("could not allocate memory: %s", strerror(errno));
-  }
-  memcpy(&features[feature_count - 1], &val, sizeof(Cstr_Array));
 }
 
 void add_exe(Cstr_Array val) {
@@ -366,6 +421,20 @@ void add_exe(Cstr_Array val) {
     PANIC("could not allocate memory: %s", strerror(errno));
   }
   memcpy(&exes[exe_count - 1], &val, sizeof(Cstr_Array));
+}
+
+void cstr_l_add_varargs(cstr_l *val, char *first, ...) {
+  if (first == NULL) {
+    return;
+  }
+  va_list args;
+  va_start(args, first);
+  cstr_str_add(val, first);
+  for (char *next = va_arg(args, char *); next != NULL;
+       next = va_arg(args, char *)) {
+    cstr_str_add(val, next);
+  }
+  return;
 }
 
 Cstr_Array cstr_array_make(Cstr first, ...) {
@@ -544,10 +613,10 @@ int handle_args(int argc, char **argv) {
     Cstr parsed = parse_feature_from_path(opt_b);
     Cstr_Array local_comp = cstr_array_make(DCOMP, NULL);
     Cstr_Array links = CSTRS();
-    for (size_t j = 0; j < feature_count; j++) {
-      if (strcmp(parsed, features[j].elems[0]) == 0) {
-        for (size_t k = 1; k < features[j].count; k++) {
-          links = cstr_array_append(links, features[j].elems[k]);
+    for (size_t j = 0; j < features.len; j++) {
+      if (strcmp(parsed, features.data[j].data[0]) == 0) {
+        for (size_t k = 1; k < features.data[j].len; k++) {
+          links = cstr_array_append(links, features.data[j].data[k]);
         }
 
         obj_build(parsed, local_comp);
@@ -658,20 +727,20 @@ void *obj_build_ptr(void *input) {
 }
 
 void obj_build_threaded(Cstr_Array comp_flags) {
-  pthread_t *tid = malloc(sizeof(pthread_t) * feature_count);
+  pthread_t *tid = malloc(sizeof(pthread_t) * features.len);
   Cstr_Array links = CSTRS();
-  for (size_t i = 0; i < feature_count; i++) {
-    for (size_t k = 1; k < features[i].count; k++) {
-      links = cstr_array_append(links, features[i].elems[k]);
+  for (size_t i = 0; i < features.len; i++) {
+    for (size_t k = 1; k < features.data[i].len; k++) {
+      links = cstr_array_append(links, features.data[i].data[k]);
     }
     thread_data_t *data = malloc(sizeof(thread_data_t));
-    data->feature = &features[i].elems[0];
+    data->feature = &features.data[i].data[0];
     data->array = &comp_flags;
     pthread_create(&tid[i], NULL, obj_build_ptr, (void *)data);
     links.elems = NULL;
     links.count = 0;
   }
-  for (size_t i = 0; i < feature_count; i++) {
+  for (size_t i = 0; i < features.len; i++) {
     pthread_join(tid[i], NULL);
   }
 }
@@ -690,20 +759,6 @@ void obj_build(Cstr feature, Cstr_Array comp_flags) {
   });
 }
 
-void manual_deps(Cstr feature, Cstr_Array man_deps) {
-  if (deps == NULL) {
-    deps = malloc(sizeof(Cstr_Array));
-    deps_count++;
-  } else {
-    deps = realloc(deps, sizeof(Cstr_Array) * ++deps_count);
-  }
-  if (deps == NULL) {
-    PANIC("could not allocate memory: %s", strerror(errno));
-  }
-  deps[deps_count - 1] = cstr_array_make(feature, NULL);
-  deps[deps_count - 1] = cstr_array_concat(deps[deps_count - 1], man_deps);
-}
-
 Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed) {
   int proc_found = 0;
   for (size_t i = 0; i < processed.count; i++) {
@@ -713,17 +768,17 @@ Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed) {
   }
   if (proc_found == 0) {
     processed = cstr_array_append(processed, feature);
-    for (size_t i = 0; i < deps_count; i++) {
-      if (strcmp(deps[i].elems[0], feature) == 0) {
-        for (size_t j = 1; j < deps[i].count; j++) {
+    for (size_t i = 0; i < deps.len; i++) {
+      if (strcmp(deps.data[i].data[0], feature) == 0) {
+        for (size_t j = 1; j < deps.data[i].len; j++) {
           int found = 0;
           for (size_t k = 0; k < processed.count; k++) {
-            if (strcmp(processed.elems[k], deps[i].elems[j]) == 0) {
+            if (strcmp(processed.elems[k], deps.data[i].data[j]) == 0) {
               found += 1;
             }
           }
           if (found == 0) {
-            processed = deps_get_manual(deps[i].elems[j], processed);
+            processed = deps_get_manual(deps.data[i].data[j], processed);
           }
         }
       }
@@ -758,14 +813,15 @@ void exe_build(Cstr exe, Cstr_Array comp_flags, Cstr_Array exe_deps) {
     local_deps = deps_get_manual(exe_deps.elems[i], local_deps);
   }
   for (size_t i = 0; i < local_deps.count; i++) {
-    for (size_t k = 0; k < feature_count; k++) {
-      if (strcmp(local_deps.elems[i], features[k].elems[0]) == 0) {
-        for (size_t l = 1; l < features[k].count; l++) {
-          local_links = cstr_array_append(local_links, features[k].elems[l]);
+    for (size_t k = 0; k < features.len; k++) {
+      if (strcmp(local_deps.elems[i], features.data[k].data[0]) == 0) {
+        for (size_t l = 1; l < features.data[k].len; l++) {
+          local_links =
+              cstr_array_append(local_links, features.data[k].data[l]);
         }
-        FOREACH_FILE_IN_DIR(file, CONCAT("src/", features[k].elems[0]), {
+        FOREACH_FILE_IN_DIR(file, CONCAT("src/", features.data[k].data[0]), {
           Cstr output =
-              CONCAT("obj/", features[k].elems[0], "/", NOEXT(file), ".o");
+              CONCAT("obj/", features.data[k].data[0], "/", NOEXT(file), ".o");
           output_list = cstr_array_append(output_list, output);
         });
       }
@@ -785,10 +841,10 @@ void release() { build(cstr_array_make(RCOMP, NULL)); }
 
 Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
   processed = cstr_array_append(processed, parsed);
-  for (size_t i = 0; i < deps_count; i++) {
-    for (size_t j = 1; j < deps[i].count; j++) {
-      if (strcmp(deps[i].elems[j], parsed) == 0) {
-        processed = incremental_build(deps[i].elems[0], processed);
+  for (size_t i = 0; i < deps.len; i++) {
+    for (size_t j = 1; j < deps.data[i].len; j++) {
+      if (strcmp(deps.data[i].data[j], parsed) == 0) {
+        processed = incremental_build(deps.data[i].data[0], processed);
       }
     }
   }
@@ -800,13 +856,13 @@ void debug() { build(cstr_array_make(DCOMP, NULL)); }
 void build(Cstr_Array comp_flags) {
   Cstr_Array links = CSTRS();
   obj_build_threaded(comp_flags);
-  for (size_t i = 0; i < feature_count; i++) {
-    for (size_t k = 1; k < features[i].count; k++) {
-      links = cstr_array_append(links, features[i].elems[k]);
+  for (size_t i = 0; i < features.len; i++) {
+    for (size_t k = 1; k < features.data[i].len; k++) {
+      links = cstr_array_append(links, features.data[i].data[k]);
     }
     if (skip_tests == 0) {
-      test_build(features[i].elems[0], comp_flags, links);
-      EXEC_TESTS(features[i].elems[0]);
+      test_build(features.data[i].data[0], comp_flags, links);
+      EXEC_TESTS(features.data[i].data[0]);
     }
     links.elems = NULL;
     links.count = 0;
@@ -879,7 +935,7 @@ int path_is_dir(Cstr path) {
   return S_ISDIR(statbuf.st_mode);
 }
 
-void path_rename(const char *old_path, const char *new_path) {
+void path_rename(char *old_path, char *new_path) {
   if (rename(old_path, new_path) < 0) {
     PANIC("could not rename %s to %s: %s", old_path, new_path, strerror(errno));
   }
