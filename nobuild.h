@@ -12,6 +12,7 @@
 #include <time.h>
 typedef FILE *Fd;
 
+#ifndef _WIN32
 #include <dirent.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -26,9 +27,341 @@ double main_utime = 0;
 long int main_sutime = 0;
 double cmd_utime = 0;
 long int cmd_sutime = 0;
+#else
+#include "windows.h"
+#include <direct.h>
+#include <process.h>
+
+typedef HANDLE Pid;
+// win getopt and getopt_long taken from https://github.com/takamin/win-c
+int getopt(int argc, char *const argv[], const char *optstring);
+
+#define no_argument 0
+#define required_argument 1
+#define optional_argument 2
+
+struct option {
+  const char *name;
+  int has_arg;
+  int *flag;
+  int val;
+};
+
+int getopt_long(int argc, char *const argv[], const char *optstring,
+                const struct option *longopts, int *longindex);
+struct dirent {
+  char d_name[MAX_PATH + 1];
+};
+
+typedef struct DIR DIR;
+
+DIR *opendir(const char *dirpath);
+struct dirent *readdir(DIR *dirp);
+int closedir(DIR *dirp);
+
+LPSTR GetLastErrorAsString(void);
+
+LPSTR GetLastErrorAsString(void) {
+  // https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
+
+  DWORD errorMessageId = GetLastError();
+  assert(errorMessageId != 0);
+
+  LPSTR messageBuffer = NULL;
+
+  DWORD size = FormatMessage(
+
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,         // DWORD   dwFlags,
+      NULL,                                      // LPCVOID lpSource,
+      errorMessageId,                            // DWORD   dwMessageId,
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // DWORD   dwLanguageId,
+      (LPSTR)&messageBuffer,                     // LPTSTR  lpBuffer,
+      0,                                         // DWORD   nSize,
+      NULL                                       // va_list *Arguments
+  );
+
+  if (size != (DWORD)-1) {
+    return messageBuffer;
+  } else {
+    return "Invalid error message in win api";
+  }
+}
+
+struct DIR {
+  HANDLE hFind;
+  WIN32_FIND_DATA data;
+  struct dirent *dirent;
+};
+
+DIR *opendir(const char *dirpath) {
+  assert(dirpath);
+
+  char buffer[MAX_PATH];
+  snprintf(buffer, MAX_PATH, "%s\\*", dirpath);
+
+  DIR *dir = (DIR *)calloc(1, sizeof(DIR));
+
+  dir->hFind = FindFirstFile(buffer, &dir->data);
+  if (dir->hFind == INVALID_HANDLE_VALUE) {
+    errno = ENOSYS;
+    goto fail;
+  }
+
+  return dir;
+
+fail:
+  if (dir) {
+    free(dir);
+  }
+
+  return NULL;
+}
+
+struct dirent *readdir(DIR *dirp) {
+  assert(dirp);
+
+  if (dirp->dirent == NULL) {
+    dirp->dirent = (struct dirent *)calloc(1, sizeof(struct dirent));
+  } else {
+    if (!FindNextFile(dirp->hFind, &dirp->data)) {
+      if (GetLastError() != ERROR_NO_MORE_FILES) {
+        errno = ENOSYS;
+      }
+
+      return NULL;
+    }
+  }
+
+  memset(dirp->dirent->d_name, 0, sizeof(dirp->dirent->d_name));
+
+  strncpy(dirp->dirent->d_name, dirp->data.cFileName,
+          sizeof(dirp->dirent->d_name) - 1);
+
+  return dirp->dirent;
+}
+
+int closedir(DIR *dirp) {
+  assert(dirp);
+
+  if (!FindClose(dirp->hFind)) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  if (dirp->dirent) {
+    free(dirp->dirent);
+  }
+  free(dirp);
+
+  return 0;
+}
+char *optarg = 0;
+int optind = 1;
+int opterr = 1;
+int optopt = 0;
+
+int postpone_count = 0;
+int nextchar = 0;
+
+static void postpone(int argc, char *const argv[], int index) {
+  char **nc_argv = (char **)argv;
+  char *p = nc_argv[index];
+  int j = index;
+  for (; j < argc - 1; j++) {
+    nc_argv[j] = nc_argv[j + 1];
+  }
+  nc_argv[argc - 1] = p;
+}
+static int postpone_noopt(int argc, char *const argv[], int index) {
+  int i = index;
+  for (; i < argc; i++) {
+    if (*(argv[i]) == '-') {
+      postpone(argc, argv, index);
+      return 1;
+    }
+  }
+  return 0;
+}
+static int _getopt_(int argc, char *const argv[], const char *optstring,
+                    const struct option *longopts, int *longindex) {
+  int len = 11;
+  while (1) {
+    int c;
+    const char *optptr = 0;
+    if (optind >= argc - postpone_count) {
+      c = 0;
+      optarg = 0;
+      break;
+    }
+    c = *(argv[optind] + nextchar);
+    if (c == '\0') {
+      nextchar = 0;
+      ++optind;
+      continue;
+    }
+    if (nextchar == 0) {
+      if (optstring[0] != '+' && optstring[0] != '-') {
+        while (c != '-') {
+          /* postpone non-opt parameter */
+          if (!postpone_noopt(argc, argv, optind)) {
+            break; /* all args are non-opt param */
+          }
+          ++postpone_count;
+          c = *argv[optind];
+        }
+      }
+      if (c != '-') {
+        if (optstring[0] == '-') {
+          optarg = argv[optind];
+          nextchar = 0;
+          ++optind;
+          return 1;
+        }
+        break;
+      } else {
+        if (strcmp(argv[optind], "--") == 0) {
+          optind++;
+          break;
+        }
+        ++nextchar;
+        if (longopts != 0 && *(argv[optind] + 1) == '-') {
+          char const *spec_long = argv[optind] + 2;
+          char const *pos_eq = strchr(spec_long, '=');
+          int spec_len = 0;
+          if (pos_eq == NULL) {
+            spec_len = strlen(spec_long);
+          } else {
+            spec_len = pos_eq - spec_long;
+          }
+          int index_search = 0;
+          int index_found = -1;
+          const struct option *optdef = 0;
+          while (index_search < len) {
+            if (strncmp(spec_long, longopts->name, spec_len) == 0) {
+              if (optdef != 0) {
+                if (opterr) {
+                  fprintf(stderr, "ambiguous option: %s\n", spec_long);
+                }
+                return '?';
+              }
+              optdef = longopts;
+              index_found = index_search;
+            }
+            longopts++;
+            index_search++;
+          }
+          if (optdef == 0) {
+            if (opterr) {
+              fprintf(stderr, "no such a option: %s\n", spec_long);
+            }
+            return '?';
+          }
+          switch (optdef->has_arg) {
+          case no_argument:
+            optarg = 0;
+            if (pos_eq != 0) {
+              if (opterr) {
+                fprintf(stderr, "no argument for %s\n", optdef->name);
+              }
+              return '?';
+            }
+            break;
+          case required_argument:
+            if (pos_eq == NULL) {
+              ++optind;
+              optarg = argv[optind];
+            } else {
+              optarg = (char *)pos_eq + 1;
+            }
+            break;
+          }
+          ++optind;
+          nextchar = 0;
+          if (longindex != 0) {
+            *longindex = index_found;
+          }
+          if (optdef->flag != 0) {
+            *optdef->flag = optdef->val;
+            return 0;
+          }
+          return optdef->val;
+        }
+        continue;
+      }
+    }
+    optptr = strchr(optstring, c);
+    if (optptr == NULL) {
+      optopt = c;
+      if (opterr) {
+        fprintf(stderr, "%s: invalid option -- %c\n", argv[0], c);
+      }
+      ++nextchar;
+      return '?';
+    }
+    if (*(optptr + 1) != ':') {
+      nextchar++;
+      if (*(argv[optind] + nextchar) == '\0') {
+        ++optind;
+        nextchar = 0;
+      }
+      optarg = 0;
+    } else {
+      nextchar++;
+      if (*(argv[optind] + nextchar) != '\0') {
+        optarg = argv[optind] + nextchar;
+      } else {
+        ++optind;
+        if (optind < argc - postpone_count) {
+          optarg = argv[optind];
+        } else {
+          optopt = c;
+          if (opterr) {
+            fprintf(stderr, "%s: option requires an argument -- %c\n", argv[0],
+                    c);
+          }
+          if ((optstring[0] == ':' ||
+               (optstring[0] == '-' || optstring[0] == '+')) &&
+              optstring[1] == ':') {
+            c = ':';
+          } else {
+            c = '?';
+          }
+        }
+      }
+      ++optind;
+      nextchar = 0;
+    }
+    return c;
+  }
+
+  /* end of option analysis */
+
+  /* fix the order of non-opt params to original */
+  while ((argc - optind - postpone_count) > 0) {
+    postpone(argc, argv, optind);
+    ++postpone_count;
+  }
+
+  nextchar = 0;
+  postpone_count = 0;
+  return -1;
+}
+
+int getopt(int argc, char *const argv[], const char *optstring) {
+  return _getopt_(argc, argv, optstring, 0, 0);
+}
+int getopt_long(int argc, char *const argv[], const char *optstring,
+                const struct option *longopts, int *longindex) {
+  return _getopt_(argc, argv, optstring, longopts, longindex);
+}
+#endif
 
 #define PATH_SEP "/"
 
+#ifndef PREFIX
+#define PREFIX "/usr/local"
+#endif
 #ifndef CFLAGS
 #define CFLAGS "-Wall", "-Werror", "-std=c11"
 #endif
@@ -62,85 +395,26 @@ long int cmd_sutime = 0;
 #define ANSI_COLOR_CYAN "\x1b[36m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 
-typedef char *Cstr;
-void INFO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
-
-#define LIST_DECL_NB(type, name)                                               \
-  typedef struct {                                                             \
-    size_t len;                                                                \
-    size_t cap;                                                                \
-    type *data;                                                                \
-  } name##_l;
-
-#define LIST_USE_NB(type, name, capacity)                                      \
-  name##_l name##_new() {                                                      \
-    name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
-    val.data = (type *)calloc(sizeof(type), capacity);                         \
-    return val;                                                                \
-  }                                                                            \
-                                                                               \
-  int name##_add(name##_l *list, type val) {                                   \
-    if (list->cap <= list->len) {                                              \
-      type *temp = NULL;                                                       \
-      list->cap <<= 1;                                                         \
-      temp = (type *)realloc(list->data, list->cap * sizeof(type));            \
-      if (temp == NULL) {                                                      \
-        list->cap >>= 1;                                                       \
-        list->cap++;                                                           \
-        temp = (type *)realloc(list->data, (list->cap) * sizeof(type));        \
-        if (temp == NULL) {                                                    \
-          return 1;                                                            \
-        }                                                                      \
-      }                                                                        \
-      list->data = temp;                                                       \
-    }                                                                          \
-    memcpy(&list->data[list->len++], &val, sizeof(type));                      \
-    return 0;                                                                  \
-  }                                                                            \
-  void name##_free(name##_l *list) { free(list->data); }
-
-#define LIST_STRUSE_NB(type, name, capacity)                                   \
-  name##_l name##_str_new() {                                                  \
-    name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
-    val.data = (type *)calloc(sizeof(type), capacity);                         \
-    return val;                                                                \
-  }                                                                            \
-                                                                               \
-  int name##_str_add(name##_l *list, type val) {                               \
-    type data = (char *)calloc(sizeof(char), strlen(val));                     \
-    strcpy(data, val);                                                         \
-    if (list->cap <= list->len) {                                              \
-      type *temp = NULL;                                                       \
-      list->cap <<= 1;                                                         \
-      temp = (type *)realloc(list->data, list->cap * sizeof(type));            \
-      if (temp == NULL) {                                                      \
-        list->cap >>= 1;                                                       \
-        list->cap++;                                                           \
-        temp = (type *)realloc(list->data, (list->cap) * sizeof(type));        \
-        if (temp == NULL) {                                                    \
-          return 1;                                                            \
-        }                                                                      \
-      }                                                                        \
-      list->data = temp;                                                       \
-    }                                                                          \
-    list->data[list->len] = data;                                              \
-    list->len++;                                                               \
-    return 0;                                                                  \
-  }                                                                            \
-  void name##_free(name##_l *list) { free(list->data); }
-
 // typedefs
-LIST_DECL_NB(char *, cstr);
-LIST_STRUSE_NB(char *, cstr, 5);
-LIST_DECL_NB(cstr_l, cstrs);
-LIST_USE_NB(cstr_l, cstrs, 5);
+typedef const char *Cstr;
 typedef struct {
   short failure_total;
   short passed_total;
 } result_t;
 typedef struct {
+  Cstr *elems;
+  size_t count;
+} Cstr_Array;
+typedef struct {
+  Cstr_Array line;
+} Cmd;
+typedef struct {
+  Cmd *elems;
+  size_t count;
+} Cmd_Array;
+typedef struct {
   Cstr *feature;
-  cstrs_l *array;
+  Cstr_Array *array;
 } thread_data_t;
 
 // statics
@@ -160,50 +434,63 @@ static struct option flags[] = {{"build", required_argument, 0, 'b'},
 
 static int skip_tests = 0;
 static result_t results = {0, 0};
-static cstrs_l features = {0, 0, 0};
-static cstrs_l deps = {0, 0, 0};
-static cstrs_l exes = {0, 0, 0};
+static Cstr_Array *features = NULL;
+static Cstr_Array libs = {.elems = 0, .count = 0};
+static Cstr_Array *deps = NULL;
+static Cstr_Array *vends = NULL;
+static Cstr_Array *exes = NULL;
+static size_t feature_count = 0;
+static size_t deps_count = 0;
+static size_t exe_count = 0;
+static size_t vend_count = 0;
+static char this_prefix[256] = {0};
 
 // forwards
-cstrs_l *deps_get_manual(Cstr feature, cstrs_l *processed);
+Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed);
 void initialize();
-cstrs_l *incremental_build(Cstr parsed, cstrs_l processed);
-void cstrs_l_concat(cstrs_l cstrs1, cstrs_l cstrs2);
+Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed);
+Cstr_Array cstr_array_concat(Cstr_Array cstrs1, Cstr_Array cstrs2);
 int cstr_ends_with(Cstr cstr, Cstr postfix);
 Cstr cstr_no_ext(Cstr path);
-cstrs_l cstrs_l_make(Cstr first, ...);
-void cstrs_l_append(cstrs_l cstrs, Cstr cstr);
-Cstr cstrs_l_join(Cstr sep, cstrs_l cstrs);
+Cstr_Array cstr_array_make(Cstr first, ...);
+Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr);
+Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs);
 Fd fd_open_for_read(Cstr path, int exit);
 Fd fd_open_for_write(Cstr path);
 void fd_close(Fd fd);
 void release();
 void debug();
-void build(cstrs_l *comp_flags);
-void obj_build(Cstr feature, cstrs_l *comp_flags);
-void obj_build_threaded(cstrs_l *comp_flags);
-void test_build(Cstr feature, cstrs_l *comp_flags, cstrs_l *feature_links);
-void exe_build(Cstr feature, cstrs_l *comp_flags, cstrs_l *deps);
-cstrs_l *deps_get_lifted(Cstr file, cstrs_l *processed);
-void manual_deps(Cstr feature, cstrs_l *deps);
+void build(Cstr_Array comp_flags);
+void obj_build(Cstr feature, Cstr_Array comp_flags);
+void obj_build_threaded(Cstr_Array comp_flags);
+void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links);
+void exe_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array deps);
+Cstr_Array deps_get_lifted(Cstr file, Cstr_Array processed);
+void lib_build(Cstr feature, Cstr_Array flags, Cstr_Array deps);
+void static_build(Cstr feature, Cstr_Array flags, Cstr_Array deps);
+void manual_deps(Cstr feature, Cstr_Array deps);
+void add_feature(Cstr_Array val);
+void add_exe(Cstr_Array val);
+void add_vend(Cstr_Array val);
 void pid_wait(Pid pid);
 void test_pid_wait(Pid pid);
 int handle_args(int argc, char **argv);
-void make_feature(char *val);
+void make_feature(Cstr val);
 void make_exe(Cstr val);
 void write_report();
 void create_folders();
 Cstr parse_feature_from_path(Cstr path);
-Cstr cmd_show(cstr_l cmd);
-Pid cmd_run_async(cstr_l cmd);
-void cmd_run_sync(cstr_l cmd);
-void test_run_sync(cstr_l cmd);
+Cstr cmd_show(Cmd cmd);
+Pid cmd_run_async(Cmd cmd);
+void cmd_run_sync(Cmd cmd);
+void test_run_sync(Cmd cmd);
 int path_is_dir(Cstr path);
-void path_mkdirs(cstrs_l path);
+void path_mkdirs(Cstr_Array path);
 void path_rename(Cstr old_path, Cstr new_path);
 void path_rm(Cstr path);
 void VLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
 void TABLOG(FILE *stream, Cstr tag, Cstr fmt, va_list args);
+void INFO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void WARN(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void ERRO(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void PANIC(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
@@ -213,43 +500,36 @@ void RUNLOG(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 // macros
-#define INITIALIZE()                                                           \
-  do {                                                                         \
-    features = cstrs_new();                                                    \
-    deps = cstrs_new();                                                        \
-    exes = cstrs_new();                                                        \
-  } while (0);
-
 #define FOREACH_ARRAY(type, elem, array, body)                                 \
   for (size_t elem_##index = 0; elem_##index < array.count; ++elem_##index) {  \
     type *elem = &array.elems[elem_##index];                                   \
     body;                                                                      \
   }
 
+#define CSTRS()                                                                \
+  { .elems = NULL, .count = 0 }
+
 #define ENDS_WITH(cstr, postfix) cstr_ends_with(cstr, postfix)
 #define NOEXT(path) cstr_no_ext(path)
-#define JOIN(sep, ...) cstrs_l_join(sep, cstrs_l_make(__VA_ARGS__, NULL))
+#define JOIN(sep, ...) cstr_array_join(sep, cstr_array_make(__VA_ARGS__, NULL))
 #define CONCAT(...) JOIN("", __VA_ARGS__)
 #define PATH(...) JOIN(PATH_SEP, __VA_ARGS__)
 
 #define DEPS(first, ...)                                                       \
   do {                                                                         \
-    cstr_l new_dep = cstr_str_new();                                           \
-    cstr_l_add_varargs(&new_dep, __VA_ARGS__, NULL);                           \
-    cstrs_add(&deps, new_dep);                                                 \
+    Cstr_Array macro_deps = cstr_array_make(__VA_ARGS__, NULL);                \
+    manual_deps(first, macro_deps);                                            \
   } while (0)
 
 #define EXE(...)                                                               \
   do {                                                                         \
-    cstr_l new_exe = cstr_str_new();                                           \
-    cstr_l_add_varargs(&new_exe, __VA_ARGS__, NULL);                           \
-    cstrs_add(&exes, new_exe);                                                 \
+    Cstr_Array exes_macro = cstr_array_make(__VA_ARGS__, NULL);                \
+    add_exe(exes_macro);                                                       \
   } while (0)
 
 #define CMD(...)                                                               \
   do {                                                                         \
-    cstr_l cmd = cstr_str_new();                                               \
-    cstr_l_add_varargs(&cmd __VA_ARGS__, NULL);                                \
+    Cmd cmd = {.line = cstr_array_make(__VA_ARGS__, NULL)};                    \
     INFO("CMD: %s", cmd_show(cmd));                                            \
     cmd_run_sync(cmd);                                                         \
   } while (0)
@@ -267,10 +547,27 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     RM("obj");                                                                 \
   } while (0)
 
+#define LIB(feature)                                                           \
+  do {                                                                         \
+    libs = cstr_array_append(libs, feature);                                   \
+  } while (0)
+
+#define VEND(vendor, repo, hash)                                               \
+  do {                                                                         \
+    Cstr_Array v = cstr_array_make(vendor, repo, hash, NULL);                  \
+    add_vend(v);                                                               \
+  } while (0)
+
+#define STATIC(feature)                                                        \
+  do {                                                                         \
+    CMD(AR, "-rc", CONCAT("target/lib", feature, ".a"),                        \
+        CONCAT("obj/", feature, ".o"));                                        \
+  } while (0)
+
 #define EXEC_TESTS(feature)                                                    \
   do {                                                                         \
     Cmd cmd = {                                                                \
-        .line = cstrs_l_make(CONCAT("target/", feature), NULL),                \
+        .line = cstr_array_make(CONCAT("target/", feature), NULL),             \
     };                                                                         \
     INFO("CMD: %s", cmd_show(cmd));                                            \
     test_run_sync(cmd);                                                        \
@@ -292,9 +589,8 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 
 #define FEATURE(...)                                                           \
   do {                                                                         \
-    cstr_l new_feature = cstr_str_new();                                       \
-    cstr_l_add_varargs(&new_feature, __VA_ARGS__, NULL);                       \
-    cstrs_add(&features, new_feature);                                         \
+    Cstr_Array val = cstr_array_make(__VA_ARGS__, NULL);                       \
+    add_feature(val);                                                          \
   } while (0)
 
 #define BOOTSTRAP(argc, argv)                                                  \
@@ -302,12 +598,91 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     handle_args(argc, argv);                                                   \
   } while (0)
 
+#define RUN(test)                                                              \
+  do {                                                                         \
+    test_result_status = 0;                                                    \
+    test();                                                                    \
+    if (test_result_status) {                                                  \
+      results.failure_total += 1;                                              \
+      fflush(stdout);                                                          \
+    } else {                                                                   \
+      results.passed_total += 1;                                               \
+      OKAY("Passed");                                                          \
+    }                                                                          \
+    test_result_status = 0;                                                    \
+  } while (0)
+
+#define RUNB(body)                                                             \
+  do {                                                                         \
+    test_result_status = 0;                                                    \
+    body if (test_result_status) {                                             \
+      results.failure_total += 1;                                              \
+      fflush(stdout);                                                          \
+    }                                                                          \
+    else {                                                                     \
+      results.passed_total += 1;                                               \
+      OKAY("Passed");                                                          \
+    }                                                                          \
+    test_result_status = 0;                                                    \
+  } while (0)
+
+#define ASSERT(assertion)                                                      \
+  do {                                                                         \
+    if (!(assertion)) {                                                        \
+      test_result_status = 1;                                                  \
+      FAILLOG("file: %s => line: %d => assertion: (%s)", __FILE__, __LINE__,   \
+              #assertion);                                                     \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_SIZE_EQ(left, right)                                            \
+  do {                                                                         \
+    if (left != right) {                                                       \
+      test_result_status = 1;                                                  \
+      FAILLOG("file: %s => line: %d => assertion: (%zu) == (%zu)", __FILE__,   \
+              __LINE__, left, right);                                          \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_STR_EQ(left, right)                                             \
+  do {                                                                         \
+    if (strcmp(left, right) != 0) {                                            \
+      test_result_status = 1;                                                  \
+      FAILLOG("file: %s => line: %d => assertion: (%s) == (%s)", __FILE__,     \
+              __LINE__, left, right);                                          \
+    }                                                                          \
+  } while (0)
+
+#define DESCRIBE(thing)                                                        \
+  do {                                                                         \
+    INFO("DESCRIBE: %s => %s", __FILE__, thing);                               \
+    FEATURE(thing);                                                            \
+  } while (0)
+
+#define SHOULDF(message, func)                                                 \
+  do {                                                                         \
+    RUNLOG("It should... %s", message);                                        \
+    RUN(func);                                                                 \
+  } while (0)
+
+#define SHOULDB(message, body)                                                 \
+  do {                                                                         \
+    RUNLOG("It should... %s", message);                                        \
+    RUNB(body);                                                                \
+  } while (0)
+
+#define RETURN()                                                               \
+  do {                                                                         \
+    write_report(CONCAT("target/nobuild/", features[0].elems[0], ".report"));  \
+    return results.failure_total;                                              \
+  } while (0)
+
 #define IS_DIR(path) path_is_dir(path)
 
 #define MKDIRS(...)                                                            \
   do {                                                                         \
-    cstrs_l path = cstrs_l_make(__VA_ARGS__, NULL);                            \
-    INFO("MKDIRS: %s", cstrs_l_join(PATH_SEP, path));                          \
+    Cstr_Array path = cstr_array_make(__VA_ARGS__, NULL);                      \
+    INFO("MKDIRS: %s", cstr_array_join(PATH_SEP, path));                       \
     path_mkdirs(path);                                                         \
   } while (0)
 
@@ -327,7 +702,7 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     errno = 0;                                                                 \
     while ((dp = readdir(dir))) {                                              \
       if (strncmp(dp->d_name, ".", sizeof(char)) != 0) {                       \
-        char *file = dp->d_name;                                               \
+        const char *file = dp->d_name;                                         \
         body;                                                                  \
       }                                                                        \
     }                                                                          \
@@ -337,11 +712,47 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
     closedir(dir);                                                             \
   } while (0)
 
+#ifdef WITH_MOCKING
+#ifndef NO_MOCKING
+#define COMMA_D __attribute__((unused)),
+#define COMMA ,
+#define DECLARE_MOCK(type, name, arguments)                                    \
+  type __var_##name[255];                                                      \
+  size_t __var_##name##_inc = 0;                                               \
+  size_t __var_##name##_actual = 0;                                            \
+  type name(arguments __attribute__((unused))) {                               \
+    return (type)__var_##name[__var_##name##_inc++];                           \
+  }
+#define DECLARE_MOCK_VOID(type, name)                                          \
+  type __var_##name[255];                                                      \
+  size_t __var_##name##_inc = 0;                                               \
+  size_t __var_##name##_actual = 0;                                            \
+  type name() { return (type)__var_##name[__var_##name##_inc++]; }
+#define DECLARE_MOCK_T(def, type) typedef struct def type;
+#define MOCK(name, value) __var_##name[__var_##name##_actual++] = value;
+#define MOCK_T(type, value, name) type name = (type)value;
+#else
+#define DECLARE_MOCK(type, name)
+#define DECLARE_MOCK_T(def, type)
+#define MOCK(name, value)
+#define MOCK_T(type, value)
+#endif
+
+#endif
+
 #endif // NOBUILD_H_
 
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifdef NOBUILD_IMPLEMENTATION
+
+Cstr_Array cstr_array_append(Cstr_Array cstrs, Cstr cstr) {
+  Cstr_Array result = {.count = cstrs.count + 1};
+  result.elems = malloc(sizeof(result.elems[0]) * result.count);
+  memcpy(result.elems, cstrs.elems, cstrs.count * sizeof(result.elems[0]));
+  result.elems[cstrs.count] = cstr;
+  return result;
+}
 
 int cstr_ends_with(Cstr cstr, Cstr postfix) {
   const size_t cstr_len = strlen(cstr);
@@ -369,42 +780,68 @@ Cstr cstr_no_ext(Cstr path) {
 
 void create_folders() {
   MKDIRS("target", "nobuild");
+  MKDIRS("vend");
   MKDIRS("obj");
-  for (size_t i = 0; i < features.len; i++) {
-    MKDIRS(CONCAT("obj/", features.data[i].data[0]));
+  for (size_t i = 0; i < feature_count; i++) {
+    MKDIRS(CONCAT("obj/", features[i].elems[0]));
   }
 }
 
 void update_results() {
-  for (size_t i = 0; i < features.len; i++) {
+  for (size_t i = 0; i < feature_count; i++) {
     Fd fd = fd_open_for_read(
-        CONCAT("target/nobuild/", features.data[i].data[0], ".report"), 1);
+        CONCAT("target/nobuild/", features[i].elems[0], ".report"), 1);
     int number;
     if (fscanf((FILE *)fd, "%d", &number) == 0) {
       PANIC("couldn't read from file %s",
-            CONCAT("target/nobuild/", features.data[i].data[0], ".report"));
+            CONCAT("target/nobuild/", features[i].elems[0], ".report"));
     }
     results.passed_total += number;
     fclose(fd);
   }
 }
 
-void cstr_l_add_varargs(cstr_l *val, char *first, ...) {
-  if (first == NULL) {
-    return;
+void add_feature(Cstr_Array val) {
+  if (features == NULL) {
+    features = malloc(sizeof(Cstr_Array));
+    feature_count++;
+  } else {
+    features = realloc(features, sizeof(Cstr_Array) * ++feature_count);
   }
-  va_list args;
-  va_start(args, first);
-  cstr_str_add(val, first);
-  for (char *next = va_arg(args, char *); next != NULL;
-       next = va_arg(args, char *)) {
-    cstr_str_add(val, next);
+  if (features == NULL || val.count == 0) {
+    PANIC("could not allocate memory: %s", strerror(errno));
   }
-  return;
+  memcpy(&features[feature_count - 1], &val, sizeof(Cstr_Array));
 }
 
-cstrs_l cstrs_l_make(Cstr first, ...) {
-  cstrs_l result = CSTRS();
+void add_exe(Cstr_Array val) {
+  if (exes == NULL) {
+    exes = malloc(sizeof(Cstr_Array));
+    exe_count++;
+  } else {
+    exes = realloc(exes, sizeof(Cstr_Array) * ++exe_count);
+  }
+  if (exes == NULL || val.count == 0) {
+    PANIC("could not allocate memory: %s", strerror(errno));
+  }
+  memcpy(&exes[exe_count - 1], &val, sizeof(Cstr_Array));
+}
+
+void add_vend(Cstr_Array val) {
+  if (vends == NULL) {
+    vends = malloc(sizeof(Cstr_Array));
+    vend_count++;
+  } else {
+    vends = realloc(vends, sizeof(Cstr_Array) * ++vend_count);
+  }
+  if (vends == NULL || val.count == 0) {
+    PANIC("could not allocate memory: %s", strerror(errno));
+  }
+  memcpy(&vends[vend_count - 1], &val, sizeof(Cstr_Array));
+}
+
+Cstr_Array cstr_array_make(Cstr first, ...) {
+  Cstr_Array result = CSTRS();
   size_t local_count = 0;
   if (first == NULL) {
     return result;
@@ -436,38 +873,51 @@ cstrs_l cstrs_l_make(Cstr first, ...) {
   return result;
 }
 
-void cstrs_l_concat(cstrs_l *cstrs1, cstrs_l *cstrs2) {
-  for (size_t i = 0; i < cstrs2->len; i++;) {
-    cstrs_add(cstrs1, cstrs2.data[i]);
+Cstr_Array cstr_array_concat(Cstr_Array cstrs1, Cstr_Array cstrs2) {
+  if (cstrs1.count == 0 && cstrs2.count == 0) {
+    Cstr_Array temp = CSTRS();
+    return temp;
+  } else if (cstrs1.count == 0) {
+    return cstrs2;
+  } else if (cstrs2.count == 0) {
+    return cstrs1;
   }
+
+  cstrs1.elems =
+      realloc(cstrs1.elems, sizeof(Cstr *) * (cstrs1.count + cstrs2.count));
+
+  memcpy(&cstrs1.elems[cstrs1.count], &cstrs2.elems[0],
+         sizeof(Cstr *) * cstrs2.count);
+  cstrs1.count += cstrs2.count;
+  return cstrs1;
 }
 
-Cstr cstr_l_join(Cstr sep, cstr_l *cstrs) {
-  if (cstrs->len == 0) {
+Cstr cstr_array_join(Cstr sep, Cstr_Array cstrs) {
+  if (cstrs.count == 0) {
     return "";
   }
 
   const size_t sep_len = strlen(sep);
   size_t len = 0;
-  for (size_t i = 0; i < cstrs->len; ++i) {
-    len += strlen(cstrs->data[i]);
+  for (size_t i = 0; i < cstrs.count; ++i) {
+    len += strlen(cstrs.elems[i]);
   }
 
-  const size_t result_len = (cstrs->len - 1) * sep_len + len + 1;
+  const size_t result_len = (cstrs.count - 1) * sep_len + len + 1;
   char *result = malloc(sizeof(char) * result_len);
   if (result == NULL) {
     PANIC("could not allocate memory: %s", strerror(errno));
   }
 
   len = 0;
-  for (size_t i = 0; i < cstrs->len; ++i) {
+  for (size_t i = 0; i < cstrs.count; ++i) {
     if (i > 0) {
       memcpy(result + len, sep, sep_len);
       len += sep_len;
     }
 
-    size_t elem_len = strlen(cstrs->data[i]);
-    memcpy(result + len, cstrs->data[i], elem_len);
+    size_t elem_len = strlen(cstrs.elems[i]);
+    memcpy(result + len, cstrs.elems[i], elem_len);
     len += elem_len;
   }
   result[len] = '\0';
@@ -508,6 +958,7 @@ int handle_args(int argc, char **argv) {
   int r = 0;
   int d = 0;
   char opt_b[256] = {0};
+  strcpy(this_prefix, PREFIX);
 
   while ((opt_char = getopt_long(argc, argv, "t:ce:sia:b:drx::", flags,
                                  &option_index)) != -1) {
@@ -550,6 +1001,30 @@ int handle_args(int argc, char **argv) {
       initialize();
       break;
     }
+    case 'f': {
+      for (size_t i = 0; i < vend_count; i++) {
+        if (strcmp(vends[i].elems[0], optarg) == 0) {
+          Fd fd =
+              fd_open_for_write(CONCAT("target/nobuild/", vends[i].elems[0]));
+          fprintf(fd, "%s", vends[i].elems[2]);
+          fclose(fd);
+        }
+      }
+      break;
+    }
+    case 'p': {
+      memset(this_prefix, 0, sizeof this_prefix);
+      if (optarg == NULL) {
+        option_index = argc - 1;
+        if (argv[option_index][0] == '-') {
+          optarg = PREFIX;
+        } else {
+          optarg = argv[option_index++];
+        }
+      }
+      strcpy(this_prefix, optarg);
+      break;
+    }
     case 't': {
       break;
     }
@@ -564,29 +1039,29 @@ int handle_args(int argc, char **argv) {
   }
   if (b) {
     Cstr parsed = parse_feature_from_path(opt_b);
-    cstrs_l local_comp = cstrs_l_make(DCOMP, NULL);
-    cstrs_l links = cstrs_new();
-    for (size_t j = 0; j < features.len; j++) {
-      if (strcmp(parsed, features.data[j].data[0]) == 0) {
-        for (size_t k = 1; k < features.data[j].len; k++) {
-          links = cstrs_l_append(links, features.data[j].data[k]);
+    Cstr_Array local_comp = cstr_array_make(DCOMP, NULL);
+    Cstr_Array links = CSTRS();
+    for (size_t j = 0; j < feature_count; j++) {
+      if (strcmp(parsed, features[j].elems[0]) == 0) {
+        for (size_t k = 1; k < features[j].count; k++) {
+          links = cstr_array_append(links, features[j].elems[k]);
         }
 
         obj_build(parsed, local_comp);
         test_build(parsed, local_comp, links);
         EXEC_TESTS(parsed);
-        links.data = NULL;
-        links.len = 0;
+        links.elems = NULL;
+        links.count = 0;
       }
     }
-    cstrs_l exe_deps = cstrs_new();
-    for (size_t i = 0; i < exes.len; i++) {
-      for (size_t k = 1; k < exes.data[i].len; k++) {
-        cstrs_l_append(exe_deps, exes.data[i].data[k]);
+    Cstr_Array exe_deps = CSTRS();
+    for (size_t i = 0; i < exe_count; i++) {
+      for (size_t k = 1; k < exes[i].count; k++) {
+        exe_deps = cstr_array_append(links, exes[i].elems[k]);
       }
-      exe_build(exes.data[i].data[0], local_comp, exe_deps);
-      exe_deps.data = NULL;
-      exe_deps.len = 0;
+      exe_build(exes[i].elems[0], local_comp, exe_deps);
+      exe_deps.elems = NULL;
+      exe_deps.count = 0;
     }
 
     RESULTS();
@@ -614,9 +1089,10 @@ void initialize() {
   MKDIRS("src");
   MKDIRS("tests");
   MKDIRS("include");
-  Cmd cmd = {.line = cstrs_l_make(
+  MKDIRS("vend");
+  Cmd cmd = {.line = cstr_array_make(
                  "/bin/bash", "-c",
-                 "echo -e '\n# nobuild\nnobuild\ntarget\ndeps\nobj\n' >> "
+                 "echo -e '\n# nobuild\nnobuild\ntarget\ndeps\nobj\nvend\n' >> "
                  ".gitignore",
                  NULL)};
   cmd_run_sync(cmd);
@@ -655,6 +1131,26 @@ Cstr parse_feature_from_path(Cstr val) {
 }
 
 void test_pid_wait(Pid pid) {
+#ifdef _WIN32
+  DWORD result = WaitForSingleObject(pid,     // HANDLE hHandle,
+                                     INFINITE // DWORD  dwMilliseconds
+  );
+
+  if (result == WAIT_FAILED) {
+    PANIC("could not wait on child process: %s", GetLastErrorAsString());
+  }
+
+  DWORD exit_status;
+  if (GetExitCodeProcess(pid, &exit_status) == 0) {
+    PANIC("could not get process exit code: %lu", GetLastError());
+  }
+
+  if (exit_status != 0) {
+    results.failure_total += exit_status;
+  }
+
+  CloseHandle(pid);
+#else
   for (;;) {
     int wstatus = 0;
     if (waitpid(pid, &wstatus, 0) < 0) {
@@ -671,6 +1167,24 @@ void test_pid_wait(Pid pid) {
       PANIC("command process was terminated by %d", WTERMSIG(wstatus));
     }
   }
+#endif
+}
+
+void package(Cstr prefix) {
+  MKDIRS(CONCAT(prefix));
+  size_t len = strlen(prefix);
+  if (prefix[len - 1] != '/') {
+    prefix = CONCAT(prefix, "/");
+  }
+  MKDIRS(CONCAT(prefix, "lib"));
+  MKDIRS(CONCAT(prefix, "include"));
+  for (size_t i = 0; i < libs.count; i++) {
+    CMD("cp", CONCAT("target/lib", libs.elems[i], ".so"),
+        CONCAT(prefix, "lib/"));
+    CMD("cp", CONCAT("include/", libs.elems[i], ".h"),
+        CONCAT(prefix, "include/"));
+  }
+  INFO("Installed Successfully");
 }
 
 void *obj_build_ptr(void *input) {
@@ -679,59 +1193,102 @@ void *obj_build_ptr(void *input) {
   return NULL;
 }
 
-void obj_build_threaded(cstrs_l comp_flags) {
-  pthread_t *tid = malloc(sizeof(pthread_t) * features.len);
-  cstrs_l links = cstrs_new();
-  for (size_t i = 0; i < features.len; i++) {
-    for (size_t k = 1; k < features.data[i].len; k++) {
-      cstrs_l_append(links, features.data[i].data[k]);
+void obj_build_threaded(Cstr_Array comp_flags) {
+  pthread_t *tid = malloc(sizeof(pthread_t) * feature_count);
+  Cstr_Array links = CSTRS();
+  for (size_t i = 0; i < feature_count; i++) {
+    for (size_t k = 1; k < features[i].count; k++) {
+      links = cstr_array_append(links, features[i].elems[k]);
     }
     thread_data_t *data = malloc(sizeof(thread_data_t));
-    data->feature = &features.data[i].data[0];
+    data->feature = &features[i].elems[0];
     data->array = &comp_flags;
     pthread_create(&tid[i], NULL, obj_build_ptr, (void *)data);
-    links.data = NULL;
-    links.len = 0;
+    links.elems = NULL;
+    links.count = 0;
   }
-  for (size_t i = 0; i < features.len; i++) {
+  for (size_t i = 0; i < feature_count; i++) {
     pthread_join(tid[i], NULL);
   }
 }
 
-void obj_build(Cstr feature, cstrs_l comp_flags) {
+void obj_build(Cstr feature, Cstr_Array comp_flags) {
+  Cstr_Array objs = CSTRS();
+  int is_lib = 0;
+  for (size_t i = 0; i < libs.count; i++) {
+    if (strcmp(libs.elems[i], feature) == 0) {
+      is_lib++;
+    }
+  }
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
-    Cmd obj_cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
-    obj_cmd.line = cstrs_l_concat(obj_cmd.line, comp_flags);
-    cstrs_l arr = cstrs_l_make("-fPIC", "-o", output, "-c", NULL);
-    obj_cmd.line = cstrs_l_concat(obj_cmd.line, arr);
+    if (is_lib) {
+      objs = cstr_array_append(objs, output);
+    }
+    Cmd obj_cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
+    obj_cmd.line = cstr_array_concat(obj_cmd.line, comp_flags);
+    Cstr_Array arr = cstr_array_make("-fPIC", "-o", output, "-c", NULL);
+    obj_cmd.line = cstr_array_concat(obj_cmd.line, arr);
     obj_cmd.line =
-        cstrs_l_append(obj_cmd.line, CONCAT("src/", feature, "/", file));
+        cstr_array_append(obj_cmd.line, CONCAT("src/", feature, "/", file));
     INFO("CMD: %s", cmd_show(obj_cmd));
     cmd_run_sync(obj_cmd);
   });
+  if (is_lib) {
+    Cstr_Array local_deps = CSTRS();
+    local_deps = deps_get_manual(feature, local_deps);
+    Cmd obj_cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
+    obj_cmd.line = cstr_array_concat(obj_cmd.line, comp_flags);
+    Cstr_Array arr = cstr_array_make(
+        "-shared", "-o", CONCAT("target/lib", feature, ".so"), NULL);
+    obj_cmd.line = cstr_array_concat(obj_cmd.line, arr);
+    for (size_t i = local_deps.count - 1; i > 0; i--) {
+      FOREACH_FILE_IN_DIR(file, CONCAT("src/", local_deps.elems[i]), {
+        Cstr output =
+            CONCAT("obj/", local_deps.elems[i], "/", NOEXT(file), ".o");
+        objs = cstr_array_append(objs, output);
+      });
+    }
+    obj_cmd.line = cstr_array_concat(obj_cmd.line, objs);
+    INFO("CMD: %s", cmd_show(obj_cmd));
+    cmd_run_sync(obj_cmd);
+  }
 }
 
-cstrs_l *deps_get_manual(Cstr feature, cstrs_l *processed) {
+void manual_deps(Cstr feature, Cstr_Array man_deps) {
+  if (deps == NULL) {
+    deps = malloc(sizeof(Cstr_Array));
+    deps_count++;
+  } else {
+    deps = realloc(deps, sizeof(Cstr_Array) * ++deps_count);
+  }
+  if (deps == NULL) {
+    PANIC("could not allocate memory: %s", strerror(errno));
+  }
+  deps[deps_count - 1] = cstr_array_make(feature, NULL);
+  deps[deps_count - 1] = cstr_array_concat(deps[deps_count - 1], man_deps);
+}
+
+Cstr_Array deps_get_manual(Cstr feature, Cstr_Array processed) {
   int proc_found = 0;
-  for (size_t i = 0; i < processed->len; i++) {
-    if (strcmp(processed->data[i], feature) == 0) {
+  for (size_t i = 0; i < processed.count; i++) {
+    if (strcmp(processed.elems[i], feature) == 0) {
       proc_found += 1;
     }
   }
   if (proc_found == 0) {
-    cstrs_l_append(processed, feature);
-    for (size_t i = 0; i < deps.len; i++) {
-      if (strcmp(deps.data[i].data[0], feature) == 0) {
-        for (size_t j = 1; j < deps.data[i].len; j++) {
+    processed = cstr_array_append(processed, feature);
+    for (size_t i = 0; i < deps_count; i++) {
+      if (strcmp(deps[i].elems[0], feature) == 0) {
+        for (size_t j = 1; j < deps[i].count; j++) {
           int found = 0;
           for (size_t k = 0; k < processed.count; k++) {
-            if (strcmp(processed.elems[k], deps.data[i].data[j]) == 0) {
+            if (strcmp(processed.elems[k], deps[i].elems[j]) == 0) {
               found += 1;
             }
           }
           if (found == 0) {
-            processed = deps_get_manual(deps.data[i].data[j], processed);
+            processed = deps_get_manual(deps[i].elems[j], processed);
           }
         }
       }
@@ -740,91 +1297,106 @@ cstrs_l *deps_get_manual(Cstr feature, cstrs_l *processed) {
   return processed;
 }
 
-void test_build(Cstr feature, cstrs_l comp_flags, cstrs_l feature_links) {
-  Cmd cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
-  cmd.line = cstrs_l_concat(cmd.line, feature_links);
-  cmd.line = cstrs_l_concat(cmd.line, comp_flags);
-  cmd.line = cstrs_l_concat(
-      cmd.line, cstrs_l_make("-o", CONCAT("target/", feature),
-                             CONCAT("tests/", feature, ".c"), NULL));
+void test_build(Cstr feature, Cstr_Array comp_flags, Cstr_Array feature_links) {
+  Cmd cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
+  cmd.line = cstr_array_concat(cmd.line, feature_links);
+  cmd.line = cstr_array_concat(cmd.line, comp_flags);
+  cmd.line = cstr_array_concat(
+      cmd.line, cstr_array_make("-o", CONCAT("target/", feature),
+                                CONCAT("tests/", feature, ".c"), NULL));
 
+#ifdef NOMOCKS
+  Cstr_Array local_deps = CSTRS();
+  local_deps = deps_get_manual(feature, local_deps);
+  for (int j = local_deps.count - 1; j >= 0; j--) {
+    Cstr curr_feature = local_deps.elems[j];
+    FOREACH_FILE_IN_DIR(file, curr_feature, {
+      Cstr output = CONCAT("obj/", curr_feature, "/", NOEXT(file), ".o");
+      cmd.line = cstr_array_append(cmd.line, output);
+    });
+  }
+#else
   FOREACH_FILE_IN_DIR(file, CONCAT("src/", feature), {
     Cstr output = CONCAT("obj/", feature, "/", NOEXT(file), ".o");
-    cmd.line = cstrs_l_append(cmd.line, output);
+    cmd.line = cstr_array_append(cmd.line, output);
   });
+#endif
   INFO("CMD: %s", cmd_show(cmd));
   cmd_run_sync(cmd);
 }
 
-void exe_build(Cstr exe, cstrs_l comp_flags, cstrs_l exe_deps) {
-  Cmd cmd = {.line = cstrs_l_make(CC, CFLAGS, NULL)};
-  cmd.line = cstrs_l_concat(cmd.line, comp_flags);
-  cstrs_l local_deps = CSTRS();
-  cstrs_l local_links = CSTRS();
-  cstrs_l output_list = CSTRS();
+void exe_build(Cstr exe, Cstr_Array comp_flags, Cstr_Array exe_deps) {
+  Cmd cmd = {.line = cstr_array_make(CC, CFLAGS, NULL)};
+  cmd.line = cstr_array_concat(cmd.line, comp_flags);
+  Cstr_Array local_deps = CSTRS();
+  Cstr_Array local_links = CSTRS();
+  Cstr_Array output_list = CSTRS();
   for (size_t i = 0; i < exe_deps.count; i++) {
     local_deps = deps_get_manual(exe_deps.elems[i], local_deps);
   }
   for (size_t i = 0; i < local_deps.count; i++) {
-    for (size_t k = 0; k < features.len; k++) {
-      if (strcmp(local_deps.elems[i], features.data[k].data[0]) == 0) {
-        for (size_t l = 1; l < features.data[k].len; l++) {
-          local_links = cstrs_l_append(local_links, features.data[k].data[l]);
+    for (size_t k = 0; k < feature_count; k++) {
+      if (strcmp(local_deps.elems[i], features[k].elems[0]) == 0) {
+        for (size_t l = 1; l < features[k].count; l++) {
+          local_links = cstr_array_append(local_links, features[k].elems[l]);
         }
-        FOREACH_FILE_IN_DIR(file, CONCAT("src/", features.data[k].data[0]), {
+        FOREACH_FILE_IN_DIR(file, CONCAT("src/", features[k].elems[0]), {
           Cstr output =
-              CONCAT("obj/", features.data[k].data[0], "/", NOEXT(file), ".o");
-          output_list = cstrs_l_append(output_list, output);
+              CONCAT("obj/", features[k].elems[0], "/", NOEXT(file), ".o");
+          output_list = cstr_array_append(output_list, output);
         });
       }
     }
   }
-  cmd.line = cstrs_l_concat(cmd.line, local_links);
-  cmd.line =
-      cstrs_l_concat(cmd.line, cstrs_l_make("-o", CONCAT("target/", exe),
-                                            CONCAT("exes/", exe, ".c"), NULL));
+  cmd.line = cstr_array_concat(cmd.line, local_links);
+  cmd.line = cstr_array_concat(
+      cmd.line, cstr_array_make("-o", CONCAT("target/", exe),
+                                CONCAT("exes/", exe, ".c"), NULL));
 
-  cmd.line = cstrs_l_concat(cmd.line, output_list);
+  cmd.line = cstr_array_concat(cmd.line, output_list);
   INFO("CMD: %s", cmd_show(cmd));
   cmd_run_sync(cmd);
 }
 
-void release() { build(cstrs_l_make(RCOMP, NULL)); }
+void release() { build(cstr_array_make(RCOMP, NULL)); }
 
-cstrs_l incremental_build(Cstr parsed, cstrs_l processed) {
-  processed = cstrs_l_append(processed, parsed);
-  for (size_t i = 0; i < deps.len; i++) {
-    for (size_t j = 1; j < deps.data[i].len; j++) {
-      if (strcmp(deps.data[i].data[j], parsed) == 0) {
-        processed = incremental_build(deps.data[i].data[0], processed);
+Cstr_Array incremental_build(Cstr parsed, Cstr_Array processed) {
+  processed = cstr_array_append(processed, parsed);
+  for (size_t i = 0; i < deps_count; i++) {
+    for (size_t j = 1; j < deps[i].count; j++) {
+      if (strcmp(deps[i].elems[j], parsed) == 0) {
+        processed = incremental_build(deps[i].elems[0], processed);
       }
     }
   }
   return processed;
 }
 
-void debug() { build(cstrs_l_make(DCOMP, NULL)); }
+void debug() { build(cstr_array_make(DCOMP, NULL)); }
 
-void build(cstrs_l comp_flags) {
-  cstrs_l links = CSTRS();
+void build(Cstr_Array comp_flags) {
+  Cstr_Array links = CSTRS();
   obj_build_threaded(comp_flags);
-  for (size_t i = 0; i < features.len; i++) {
-    for (size_t k = 1; k < features.data[i].len; k++) {
-      links = cstrs_l_append(links, features.data[i].data[k]);
+  for (size_t i = 0; i < feature_count; i++) {
+    for (size_t k = 1; k < features[i].count; k++) {
+      links = cstr_array_append(links, features[i].elems[k]);
     }
+    // obj_build(features[i].elems[0], comp_flags);
+    // obj_build_threaded(features[i].elems[0], comp_flags);
+    // test_build(features[i].elems[0], comp_flags, links);
     if (skip_tests == 0) {
-      test_build(features.data[i].data[0], comp_flags, links);
-      EXEC_TESTS(features.data[i].data[0]);
+      test_build(features[i].elems[0], comp_flags, links);
+      EXEC_TESTS(features[i].elems[0]);
     }
     links.elems = NULL;
     links.count = 0;
   }
-  cstrs_l exe_deps = CSTRS();
-  for (size_t i = 0; i < exes.len; i++) {
-    for (size_t k = 1; k < exes.data[i].len; k++) {
-      exe_deps = cstrs_l_append(links, exes.data[i].data[k]);
+  Cstr_Array exe_deps = CSTRS();
+  for (size_t i = 0; i < exe_count; i++) {
+    for (size_t k = 1; k < exes[i].count; k++) {
+      exe_deps = cstr_array_append(links, exes[i].elems[k]);
     }
-    exe_build(exes.data[i].data[0], comp_flags, exe_deps);
+    exe_build(exes[i].elems[0], comp_flags, exe_deps);
     exe_deps.elems = NULL;
     exe_deps.count = 0;
   }
@@ -833,6 +1405,26 @@ void build(cstrs_l comp_flags) {
 }
 
 void pid_wait(Pid pid) {
+#ifdef _WIN32
+  DWORD result = WaitForSingleObject(pid,     // HANDLE hHandle,
+                                     INFINITE // DWORD  dwMilliseconds
+  );
+
+  if (result == WAIT_FAILED) {
+    PANIC("could not wait on child process: %s", GetLastErrorAsString());
+  }
+
+  DWORD exit_status;
+  if (GetExitCodeProcess(pid, &exit_status) == 0) {
+    PANIC("could not get process exit code: %lu", GetLastError());
+  }
+
+  if (exit_status != 0) {
+    PANIC("command exited with exit code %lu", exit_status);
+  }
+
+  CloseHandle(pid);
+#else
   for (;;) {
     int wstatus = 0;
     if (waitpid(pid, &wstatus, 0) < 0) {
@@ -850,29 +1442,64 @@ void pid_wait(Pid pid) {
       PANIC("command process was terminated by %d", WTERMSIG(wstatus));
     }
   }
+#endif
 }
 
-Cstr cmd_show(Cmd cmd) { return cstrs_l_join(" ", cmd.line); }
+Cstr cmd_show(Cmd cmd) { return cstr_array_join(" ", cmd.line); }
 
 Pid cmd_run_async(Cmd cmd) {
+#ifdef _WIN32
+  // https://docs.microsoft.com/en-us/windows/win32/procthread/creating-a-child-process-with-redirected-input-and-output
+
+  STARTUPINFO siStartInfo;
+  ZeroMemory(&siStartInfo, sizeof(siStartInfo));
+  siStartInfo.cb = sizeof(STARTUPINFO);
+  // NOTE: theoretically setting NULL to std handles should not be a problem
+  // https://docs.microsoft.com/en-us/windows/console/getstdhandle?redirectedfrom=MSDN#attachdetach-behavior
+  siStartInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+  // TODO(#32): check for errors in GetStdHandle
+  siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+  PROCESS_INFORMATION piProcInfo;
+  ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+
+  BOOL bSuccess = CreateProcess(
+      NULL,
+      // TODO(#33): cmd_run_async on Windows does not render command line
+      // properly It may require wrapping some arguments with double-quotes if
+      // they contains spaces, etc.
+      (char *)cstr_array_join(" ", cmd.line), NULL, NULL, TRUE, 0, NULL, NULL,
+      &siStartInfo, &piProcInfo);
+
+  if (!bSuccess) {
+    PANIC("Could not create child process %s: %s\n", cmd_show(cmd),
+          GetLastErrorAsString());
+  }
+
+  CloseHandle(piProcInfo.hThread);
+
+  return piProcInfo.hProcess;
+#else
   pid_t cpid = fork();
   if (cpid < 0) {
     PANIC("Could not fork child process: %s: %s", cmd_show(cmd),
           strerror(errno));
   }
   if (cpid == 0) {
-    cstrs_l args = cstrs_l_append(cmd.line, NULL);
+    Cstr_Array args = cstr_array_append(cmd.line, NULL);
     if (execvp(args.elems[0], (char *const *)args.elems) < 0) {
       PANIC("Could not exec child process: %s: %d", cmd_show(cmd), errno);
     }
   }
   return cpid;
+#endif
 }
 
 void cmd_run_sync(Cmd cmd) { pid_wait(cmd_run_async(cmd)); }
 void test_run_sync(Cmd cmd) { test_pid_wait(cmd_run_async(cmd)); }
 
 int path_is_dir(Cstr path) {
+#ifndef _WIN32
   struct stat statbuf = {0};
   if (stat(path, &statbuf) < 0) {
     if (errno == ENOENT) {
@@ -885,33 +1512,39 @@ int path_is_dir(Cstr path) {
   }
 
   return S_ISDIR(statbuf.st_mode);
+#else
+  DWORD dwAttrib = GetFileAttributes(path);
+
+  return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+          (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+#endif
 }
 
-void path_rename(char *old_path, char *new_path) {
+void path_rename(const char *old_path, const char *new_path) {
   if (rename(old_path, new_path) < 0) {
     PANIC("could not rename %s to %s: %s", old_path, new_path, strerror(errno));
   }
 }
 
-void path_mkdirs(cstrs_l path) {
-  if (path.len == 0) {
+void path_mkdirs(Cstr_Array path) {
+  if (path.count == 0) {
     return;
   }
 
   size_t len = 0;
-  for (size_t i = 0; i < path.len; ++i) {
-    len += strlen(path.data[i]);
+  for (size_t i = 0; i < path.count; ++i) {
+    len += strlen(path.elems[i]);
   }
 
-  size_t seps_count = path.len - 1;
+  size_t seps_count = path.count - 1;
   const size_t sep_len = strlen(PATH_SEP);
 
   char *result = malloc(len + seps_count * sep_len + 1);
 
   len = 0;
   for (size_t i = 0; i < path.count; ++i) {
-    size_t n = strlen(path.data[i]);
-    memcpy(result + len, path.data[i], n);
+    size_t n = strlen(path.elems[i]);
+    memcpy(result + len, path.elems[i], n);
     len += n;
 
     if (seps_count > 0) {
@@ -921,6 +1554,7 @@ void path_mkdirs(cstrs_l path) {
     }
 
     result[len] = '\0';
+#ifndef _WIN32
     if (mkdir(result, 0755) < 0) {
       if (errno == EEXIST) {
         errno = 0;
@@ -928,6 +1562,15 @@ void path_mkdirs(cstrs_l path) {
         PANIC("could not create directory %s: %s", result, strerror(errno));
       }
     }
+#else
+    if (_mkdir(result) < 0) {
+      if (errno == EEXIST) {
+        errno = 0;
+      } else {
+        PANIC("could not create directory %s: %s", result, strerror(errno));
+      }
+    }
+#endif
   }
 }
 

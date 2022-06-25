@@ -3,4 +3,4 @@ gcc
 -Wall
 -Werror
 -Wextra
-
+-DNOBUILD_IMPLEMENTATION
