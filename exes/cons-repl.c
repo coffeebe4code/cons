@@ -1,5 +1,6 @@
 #include "../include/ast.h"
 #include "../include/cli.h"
+#include "../include/error.h"
 #include "../include/ir.h"
 #include "../include/lex.h"
 #include "../include/lexeme.h"
@@ -30,7 +31,10 @@ int main(int argc, char **argv) {
   //
 
   while (cont) {
-    fgets(input, USER_SIZE, stdin);
+    if (fgets(input, USER_SIZE, stdin) == NULL) {
+      ERROR(&(error_t){memory, {0}, 0}, "fgets failed in repl");
+      exit(1);
+    }
     if (input[0] == '/' && input[1] == '/') {
       // parse a repl command
       // quit or q, write or w, clear or c
@@ -45,8 +49,8 @@ int main(int argc, char **argv) {
       }
       memcpy(buffer + idx, input, len - 1);
       idx += len - 1;
-      lex_source = lex_new(buffer + idx);
-      ast_t *new_ast = parse_high_bin(&lex_source, &parse_source);
+      lex_source = lex_new(buffer);
+      ast_t *new_ast = parse_low_bin(&lex_source, &parse_source);
       ir_begin(&ir_source, new_ast);
       vm_t vm = vm_new(ir_source.gen.binary);
       vm_run(vm);

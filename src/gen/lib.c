@@ -19,7 +19,7 @@ gen_source_t gen_new() {
   return val;
 }
 
-void check_size(gen_source_t *gen, uint8_t size) {
+void check_size_gen(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
     gen->cap <<= 1;
     gen->binary = realloc(gen->binary, gen->cap * sizeof(byte_t));
@@ -30,7 +30,7 @@ void check_size(gen_source_t *gen, uint8_t size) {
 
 size_t gen_add8(gen_source_t *gen, byte_t value) {
   size_t size = sizeof(value);
-  check_size(gen, size);
+  check_size_gen(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
   size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
@@ -39,7 +39,7 @@ size_t gen_add8(gen_source_t *gen, byte_t value) {
 
 size_t gen_add16(gen_source_t *gen, byte2_t value) {
   size_t size = sizeof(value);
-  check_size(gen, size);
+  check_size_gen(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
   size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
@@ -48,7 +48,7 @@ size_t gen_add16(gen_source_t *gen, byte2_t value) {
 
 size_t gen_add32(gen_source_t *gen, byte4_t value) {
   size_t size = sizeof(value);
-  check_size(gen, size);
+  check_size_gen(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
   size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;
@@ -61,7 +61,7 @@ byte_t *gen_getbyte(gen_source_t *gen, size_t idx) {
 
 size_t gen_add64(gen_source_t *gen, byte8_t value) {
   size_t size = sizeof(value);
-  check_size(gen, size);
+  check_size_gen(gen, size);
   gen->current_pos = memcpy(gen->current_pos, &value, size);
   size_t pos = (gen->current_pos - gen->binary) / sizeof(byte_t);
   gen->current_pos += size;

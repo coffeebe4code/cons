@@ -8,4 +8,7 @@
 - Implement RAII
 - Write tests for IR
 - Hook it all together in repl
+- Make interfaces better for repl
+- Add more to parser to make it complete for repl
+
 

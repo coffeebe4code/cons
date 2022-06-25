@@ -14,7 +14,7 @@ void parse_exit(void *ptr) {
   }
 }
 
-void check_size(parser_source_t *parser) {
+void check_size_parser(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
     parser->cap <<= 2;
     void *ret = realloc(parser->asts, parser->cap);
@@ -30,7 +30,7 @@ parser_source_t parser_new() {
 }
 
 ast_t *parser_add(parser_source_t *parser, ast_t ast) {
-  check_size(parser);
+  check_size_parser(parser);
   void *ret = memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
   return ret;
 }

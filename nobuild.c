@@ -4,7 +4,6 @@
 #include "./nobuild.h"
 
 int main(int argc, char **argv) {
-  INITIALIZE();
   FEATURE("token");
   FEATURE("list");
   FEATURE("span");
@@ -29,7 +28,7 @@ int main(int argc, char **argv) {
   DEPS("parse", "ast", "lex", "lexeme", "span");
   DEPS("ir", "ast", "pros", "byte", "gen");
   EXE("cons-repl", "cli", "ast", "ir", "lex", "lexeme", "parse", "pros",
-      "token", "vm");
+      "token", "vm", "error");
   BOOTSTRAP(argc, argv);
   return 0;
 }
