@@ -4,6 +4,8 @@
 #include "../../include/pros.h"
 #include "string.h"
 
+LIST_USE(block_t, blocks, 10);
+
 instr_t make_ir_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   instr_t val = (instr_t){
       .op = op, .dst = dst, .lft = srcl, .data.rgt = srcr, .sizeptr = 0};
@@ -23,8 +25,6 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   val |= srcr;
   return val;
 }
-
-LIST_USE(block_t, blocks, 10);
 
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");

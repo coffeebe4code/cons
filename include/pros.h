@@ -12,7 +12,8 @@ typedef enum {
   IfBlock,
   RetBlock,
   RetBlockVoid,
-  FirstBlock
+  FirstBlock,
+  LeafBlock,
 } block_e;
 
 typedef enum {
@@ -129,7 +130,7 @@ typedef struct {
   size_t *preds;
   size_t *succs;
   size_t label;
-  instr_t *instructions;
+  instrs_l instructions;
   block_e kind;
 } block_t;
 #endif
