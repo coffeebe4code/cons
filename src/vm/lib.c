@@ -58,7 +58,6 @@ vm_t vm_run(vm_t vm) {
     }
     case f64Add: {
       BINARY_OP(+);
-      printf("%lu\n", vm.regs[dst]);
       break;
     }
     case f64Mul: {

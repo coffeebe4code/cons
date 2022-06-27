@@ -18,9 +18,9 @@ void add_ir_data(instr_t *instr, void *data, size_t size) {
 byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   byte4_t val = 0;
   val = op << 24;
-  val &= dst << 16;
-  val &= srcl << 8;
-  val &= srcr;
+  val |= dst << 16;
+  val |= srcl << 8;
+  val |= srcr;
   return val;
 }
 
