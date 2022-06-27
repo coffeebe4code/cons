@@ -11,6 +11,7 @@ typedef struct {
   byte8_t regs[VM_REG_COUNT];
   byte8_t stack[VM_MAX_STACK];
   byte8_t *sp;
+  byte8_t result;
 } vm_t;
 
 typedef struct {

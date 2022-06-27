@@ -73,16 +73,27 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
 
 size_t ir_constf64(ir_source_t *source, byte8_t left) {
   size_t dst = source->new_idx;
+  // 2 = 0
+  // 2 = 1
+  // 4 = 2
   byte4_t instr = make_gen_instr(f64Const, source->new_idx++, 0, 0);
+  byte4_t noop = make_gen_instr(NoOp, 0, 0, 0);
   gen_add32(&source->gen, instr);
+  gen_add32(&source->gen, noop);
   gen_add64(&source->gen, left);
   return dst;
 }
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   size_t dst = source->new_idx;
-  byte4_t instr = make_gen_instr(f64Add, source->new_idx++, left, right);
+
+  byte4_t instr = make_gen_instr(f64Add, source->new_idx, left, right);
+  printf("left %lu, right %lu, dst %lu\n", left, right, source->new_idx);
+  source->new_idx++;
+  byte4_t ret = make_gen_instr(Ret, source->new_idx - 1, 0, 0);
+  source->new_idx++;
   gen_add32(&source->gen, instr);
+  gen_add32(&source->gen, ret);
   return dst;
 }
 void ir_clean(ir_source_t *source) { blocks_free(&source->blocks); }

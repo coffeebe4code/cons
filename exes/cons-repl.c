@@ -40,9 +40,7 @@ int main(int argc, char **argv) {
       // quit or q, write or w, clear or c
     } else {
       size_t len = strlen(input);
-      printf("len %lu\n", len);
       size_t cmp = len + idx;
-      printf("cmp %lu\n", cmp);
       if (cmp >= size) {
         size <<= 1;
         buffer = realloc(buffer, size);
@@ -53,7 +51,8 @@ int main(int argc, char **argv) {
       ast_t *new_ast = parse_low_bin(&lex_source, &parse_source);
       ir_begin(&ir_source, new_ast);
       vm_t vm = vm_new(ir_source.gen.binary);
-      vm_run(vm);
+      vm = vm_run(vm);
+      printf("result = %llu\n", vm.regs[vm.result]);
     }
   }
 
