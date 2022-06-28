@@ -15,7 +15,7 @@
     dst = READ_DST();                                                          \
     srcl = READ_SRCL();                                                        \
     srcr = READ_SRCR();                                                        \
-    vm.regs[dst] = vm.regs[srcl] + vm.regs[srcr];                              \
+    vm.regs[dst] = vm.regs[srcl] op vm.regs[srcr];                             \
     INC_IP32();                                                                \
   } while (0);
 
