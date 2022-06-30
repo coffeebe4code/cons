@@ -23,7 +23,8 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr);
 
 size_t ir_constf64(ir_source_t *source, byte8_t left);
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right);
-void ir_mulf64(ir_source_t *source, byte8_t left, byte8_t right);
-void ir_div64(ir_source_t *source, byte8_t left, byte8_t right);
-void ir_sub64(ir_source_t *source, size_t left, size_t right);
+size_t ir_mulf64(ir_source_t *source, size_t left, size_t right);
+size_t ir_divf64(ir_source_t *source, size_t left, size_t right);
+size_t ir_subf64(ir_source_t *source, size_t left, size_t right);
+size_t ir_modf64(ir_source_t *source, size_t left, size_t right);
 #endif

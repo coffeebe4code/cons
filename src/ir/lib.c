@@ -73,6 +73,22 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
       result = ir_addf64(ir, left, right);
       break;
     }
+    case Mul: {
+      result = ir_mulf64(ir, left, right);
+      break;
+    }
+    case Div: {
+      result = ir_divf64(ir, left, right);
+      break;
+    }
+    case Sub: {
+      result = ir_subf64(ir, left, right);
+      break;
+    }
+    case Mod: {
+      result = ir_modf64(ir, left, right);
+      break;
+    }
     default: {
       puts("binop not implemented");
       break;
@@ -97,7 +113,31 @@ size_t ir_constf64(ir_source_t *source, byte8_t data) {
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   size_t dst = source->instr_id++;
-  byte4_t instr = make_gen_instr(f64Add, dst, left, right);
+  instr_t instr = make_instr(f64Add, dst, left, right);
+  return dst;
+}
+
+size_t ir_mulf64(ir_source_t *source, size_t left, size_t right) {
+  size_t dst = source->instr_id++;
+  instr_t instr = make_instr(f64Mul, dst, left, right);
+  return dst;
+}
+
+size_t ir_divf64(ir_source_t *source, size_t left, size_t right) {
+  size_t dst = source->instr_id++;
+  instr_t instr = make_instr(f64Div, dst, left, right);
+  return dst;
+}
+
+size_t ir_subf64(ir_source_t *source, size_t left, size_t right) {
+  size_t dst = source->instr_id++;
+  instr_t instr = make_instr(f64Sub, dst, left, right);
+  return dst;
+}
+
+size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
+  size_t dst = source->instr_id++;
+  instr_t instr = make_instr(f64Mod, dst, left, right);
   return dst;
 }
 void ir_clean(ir_source_t *source) { blocks_free(&source->blocks); }
