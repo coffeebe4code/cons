@@ -113,12 +113,14 @@ typedef enum {
 typedef struct {
   op_e op;
   byte_t dst;
-  byte_t lft;
+  union {
+    byte_t lft;
+    byte8_t raw_data;
+  } pt1;
   union {
     byte_t rgt;
-    void *ptr;
-  } data;
-  size_t sizeptr;
+    size_t raw_size;
+  } pt2;
 } instr_t;
 
 LIST_DECL(instr_t, instrs);
