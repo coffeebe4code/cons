@@ -140,6 +140,17 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Mod, dst, left, right);
   return dst;
 }
-void ir_clean(ir_source_t *source) { blocks_free(&source->blocks); }
 
-void ir_free(ir_source_t *source) { blocks_free(&source->blocks); }
+void ir_clean(ir_source_t *source) {
+  for (size_t i = 0; i < source->blocks.len; i++) {
+    instrs_free(&source->blocks.data[i].instructions);
+  }
+  blocks_free(&source->blocks);
+}
+
+void ir_free(ir_source_t *source) {
+  for (size_t i = 0; i < source->blocks.len; i++) {
+    instrs_free(&source->blocks.data[i].instructions);
+  }
+  blocks_free(&source->blocks);
+}
