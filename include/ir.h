@@ -5,14 +5,12 @@
 #include "gen.h"
 #include "list.h"
 #include "pros.h"
-#include <stddef.h>
 
-LIST_DECL(block_t, blocks);
 typedef struct {
   blocks_l blocks;
-  size_t curr_block;
   gen_source_t gen;
-  size_t new_idx;
+  size_t instr_id;
+  size_t block_id;
   size_t main_exit;
 } ir_source_t;
 

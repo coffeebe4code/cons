@@ -4,12 +4,29 @@
 #include "../../include/pros.h"
 #include "string.h"
 
-LIST_USE(block_t, blocks, 10);
+LIST_USE(block_t, blocks, 1);
+LIST_USE(instr_t, instrs, 1);
+
+void ir_exit() {
+  puts("[ERROR] | failure to allocate enough memory");
+  puts("          in ir generation");
+  exit(1);
+}
 
 instr_t make_ir_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   instr_t val = (instr_t){
       .op = op, .dst = dst, .lft = srcl, .data.rgt = srcr, .sizeptr = 0};
   return val;
+}
+
+void new_block(ir_source_t *ir) {
+  block_t new = (block_t){.preds = NULL,
+                          .succs = NULL,
+                          .label_id = ir->block_id,
+                          .kind = PlainBlock};
+  if (blocks_add(&ir->blocks, new)) {
+    ir_exit();
+  }
 }
 
 void add_ir_data(instr_t *instr, void *data, size_t size) {
@@ -26,14 +43,9 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   return val;
 }
 
-void ir_exit() {
-  puts("[ERROR] | failure to allocate enough memory");
-  puts("          in ir generation");
-  exit(1);
-}
-
 ir_source_t ir_new() {
-  ir_source_t val = {.blocks = blocks_new(), .new_idx = 0, .gen = gen_new()};
+  ir_source_t val = {
+      .blocks = blocks_new(), .block_id = 0, .instr_id = 0, .gen = gen_new()};
   if (val.blocks.data == NULL) {
     ir_exit();
   }
@@ -72,8 +84,8 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
 }
 
 size_t ir_constf64(ir_source_t *source, byte8_t left) {
-  size_t dst = source->new_idx;
-  byte4_t instr = make_gen_instr(f64Const, source->new_idx++, 0, 0);
+  size_t dst = source->instr_id++;
+  byte4_t instr = make_gen_instr(f64Const, dst, 0, 0);
   byte4_t noop = make_gen_instr(NoOp, 0, 0, 0);
   gen_add32(&source->gen, instr);
   gen_add32(&source->gen, noop);
@@ -82,11 +94,10 @@ size_t ir_constf64(ir_source_t *source, byte8_t left) {
 }
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->new_idx;
-  byte4_t instr = make_gen_instr(f64Add, source->new_idx, left, right);
-  source->new_idx++;
-  byte4_t ret = make_gen_instr(Ret, source->new_idx - 1, 0, 0);
-  source->new_idx++;
+  size_t dst = source->instr_id++;
+  byte4_t instr = make_gen_instr(f64Add, dst, left, right);
+  byte4_t ret = make_gen_instr(Ret, source->instr_id++, 0, 0);
+  source->instr_id++;
   gen_add32(&source->gen, instr);
   gen_add32(&source->gen, ret);
   return dst;

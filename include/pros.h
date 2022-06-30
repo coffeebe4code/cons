@@ -4,9 +4,6 @@
 #include "list.h"
 #include "stdio.h"
 
-LIST_DECL(size_t, succs);
-LIST_DECL(size_t, preds);
-
 typedef enum {
   PlainBlock,
   IfBlock,
@@ -129,8 +126,11 @@ LIST_DECL(instr_t, instrs);
 typedef struct {
   size_t *preds;
   size_t *succs;
-  size_t label;
+  size_t label_id;
   instrs_l instructions;
   block_e kind;
 } block_t;
+
+LIST_DECL(block_t, blocks);
+
 #endif
