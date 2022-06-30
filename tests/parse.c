@@ -11,6 +11,7 @@ DECLARE_MOCK(int, is_un_op, token_e t);
 DECLARE_MOCK(int, is_num, token_e t);
 DECLARE_MOCK(int, is_high_bin, token_e t);
 DECLARE_MOCK(int, is_low_bin, token_e t);
+DECLARE_MOCK(size_t, hash, const char *str);
 
 void test_terminal() {
   char *input = "7.0";

@@ -26,10 +26,10 @@ int main(int argc, char **argv) {
   DEPS("pros", "list", "byte");
   DEPS("lexeme", "token", "span");
   DEPS("ast", "lexeme", "token", "span");
-  DEPS("parse", "ast", "lex", "lexeme", "span");
+  DEPS("parse", "ast", "lex", "lexeme", "span", "hash");
   DEPS("ir", "ast", "pros", "byte", "gen");
   EXE("cons-repl", "cli", "ast", "ir", "lex", "lexeme", "parse", "pros",
-      "token", "vm", "error");
+      "token", "vm", "error", "hash");
   BOOTSTRAP(argc, argv);
   return 0;
 }

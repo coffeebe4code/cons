@@ -84,7 +84,7 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
 }
 
 size_t ir_constf64(ir_source_t *source, byte8_t left) {
-  size_t dst = source->instr_id++;
+  size_t dst = source->instr_id++; // 0 77, 1 77, 2 add, 2 ret
   byte4_t instr = make_gen_instr(f64Const, dst, 0, 0);
   byte4_t noop = make_gen_instr(NoOp, 0, 0, 0);
   gen_add32(&source->gen, instr);
@@ -96,8 +96,7 @@ size_t ir_constf64(ir_source_t *source, byte8_t left) {
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   size_t dst = source->instr_id++;
   byte4_t instr = make_gen_instr(f64Add, dst, left, right);
-  byte4_t ret = make_gen_instr(Ret, source->instr_id++, 0, 0);
-  source->instr_id++;
+  byte4_t ret = make_gen_instr(Ret, dst, 0, 0);
   gen_add32(&source->gen, instr);
   gen_add32(&source->gen, ret);
   return dst;

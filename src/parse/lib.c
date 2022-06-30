@@ -1,4 +1,5 @@
 #include "../../include/ast.h"
+#include "../../include/hash.h"
 #include "../../include/lex.h"
 #include "../../include/lexeme.h"
 #include "../../include/parse.h"
@@ -41,7 +42,8 @@ ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
     char *symbol = malloc(sizeof(char) * val.span.len + 1);
     memcpy(symbol, val.span.ptr, val.span.len);
     symbol[val.span.len] = '\0';
-    ast_t ast = AST_Identifer(symbol);
+    size_t hashval = hash(symbol);
+    ast_t ast = AST_Identifer(symbol, hashval);
     return parser_add(parser, ast);
   }
   return NULL;
