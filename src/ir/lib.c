@@ -21,13 +21,13 @@ instr_t make_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
 
 void insert_instr(ir_source_t *ir, instr_t instr) {
   instrs_add(&ir->blocks.data[ir->block_id].instructions, instr);
-  ir->instr_id++;
 }
 
 void new_block(ir_source_t *ir) {
   block_t new = (block_t){.preds = NULL,
                           .succs = NULL,
-                          .label_id = ir->block_id,
+                          .label_id = ++ir->block_id,
+                          .instructions = instrs_new(),
                           .kind = PlainBlock};
   if (blocks_add(&ir->blocks, new)) {
     ir_exit();
@@ -51,10 +51,11 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
 
 ir_source_t ir_new() {
   ir_source_t val = {
-      .blocks = blocks_new(), .block_id = 0, .instr_id = 0, .gen = gen_new()};
+      .blocks = blocks_new(), .block_id = -1, .reg_id = 0, .gen = gen_new()};
   if (val.blocks.data == NULL) {
     ir_exit();
   }
+  new_block(&val);
   return val;
 }
 
@@ -90,7 +91,8 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
       break;
     }
     default: {
-      puts("binop not implemented");
+      puts("binop not supported, this is a bug with cons");
+      exit(1);
       break;
     }
     }
@@ -100,57 +102,72 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   }
   return result;
 }
+void ir_flush_gen(ir_source_t *ir) {
+  for (size_t i = 0; i < ir->blocks.len; i++) {
+    for (size_t j = 0; j < ir->blocks.data[i].instructions.len; j++) {
+      instr_t local_instr = ir->blocks.data[i].instructions.data[j];
+      switch (local_instr.op) {
+      case f64Const: {
+        make_data_instr(local_instr.op, local_instr.dst,
+                        local_instr.pt1.raw_data, local_instr.pt2.raw_size);
+        break;
+      }
+
+      default: {
+        make_gen_instr(local_instr.op, local_instr.dst, local_instr.pt1.lft,
+                       local_instr.pt2.rgt);
+        break;
+      }
+      }
+    }
+  }
+}
 
 void ir_begin(ir_source_t *ir, ast_t *main) {
   ir->main_exit = ir_recurse(ir, main);
 }
 
 size_t ir_constf64(ir_source_t *source, byte8_t data) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_data_instr(f64Const, dst, data, sizeof(double));
-  return dst;
+  instr_t instr =
+      make_data_instr(f64Const, source->reg_id++, data, sizeof(double));
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_instr(f64Add, dst, left, right);
-  return dst;
+  instr_t instr = make_instr(f64Add, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 size_t ir_mulf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_instr(f64Mul, dst, left, right);
-  return dst;
+  instr_t instr = make_instr(f64Mul, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 size_t ir_divf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_instr(f64Div, dst, left, right);
-  return dst;
+  instr_t instr = make_instr(f64Div, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 size_t ir_subf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_instr(f64Sub, dst, left, right);
-  return dst;
+  instr_t instr = make_instr(f64Sub, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
-  size_t dst = source->instr_id++;
-  instr_t instr = make_instr(f64Mod, dst, left, right);
-  return dst;
-}
-
-void ir_clean(ir_source_t *source) {
-  for (size_t i = 0; i < source->blocks.len; i++) {
-    instrs_free(&source->blocks.data[i].instructions);
-  }
-  blocks_free(&source->blocks);
+  instr_t instr = make_instr(f64Mod, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
 }
 
 void ir_free(ir_source_t *source) {
   for (size_t i = 0; i < source->blocks.len; i++) {
     instrs_free(&source->blocks.data[i].instructions);
   }
+  gen_free(&source->gen);
   blocks_free(&source->blocks);
 }

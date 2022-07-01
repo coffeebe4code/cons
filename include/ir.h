@@ -9,7 +9,7 @@
 typedef struct {
   blocks_l blocks;
   gen_source_t gen;
-  size_t instr_id;
+  size_t reg_id;
   size_t block_id;
   size_t main_exit;
 } ir_source_t;
