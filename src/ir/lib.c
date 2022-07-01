@@ -43,11 +43,15 @@ instr_t make_data_instr(op_e op, byte_t dst, byte8_t data, size_t size) {
 
 void make_data_gen_instr(gen_source_t *gen, op_e op, byte_t dst, byte8_t data,
                          size_t size) {
-  gen_add32(gen, make_gen_instr(op, dst, 0, 0));
   uintptr_t addr = (uintptr_t)gen->current_pos;
   if (addr % size != 0) {
+    puts("not aligned");
+    gen_add32(gen, make_gen_instr(op, dst, 1, 0));
     gen_add32(gen, make_gen_instr(NoOp, 0, 0, 0));
-  };
+  } else {
+    puts("aligned");
+    gen_add32(gen, make_gen_instr(op, dst, 0, 0));
+  }
   gen_add64(gen, data);
 }
 
@@ -120,16 +124,20 @@ void ir_flush_gen(ir_source_t *ir) {
       instr_t local_instr = ir->blocks.data[i].instructions.data[j];
       switch (local_instr.op) {
       case f64Const: {
-        make_data_instr(local_instr.op, local_instr.dst,
-                        local_instr.pt1.raw_data, local_instr.pt2.raw_size);
+        make_data_gen_instr(&ir->gen, local_instr.op, local_instr.dst,
+                            local_instr.pt1.raw_data, local_instr.pt2.raw_size);
+
         break;
       }
       case Ret: {
-        make_gen_instr(Ret, local_instr.op, 0, 0);
+        byte4_t val = make_gen_instr(Ret, local_instr.op, 0, 0);
+        gen_add32(&ir->gen, val);
+        break;
       }
       default: {
-        make_gen_instr(local_instr.op, local_instr.dst, local_instr.pt1.lft,
-                       local_instr.pt2.rgt);
+        byte4_t val = make_gen_instr(local_instr.op, local_instr.dst,
+                                     local_instr.pt1.lft, local_instr.pt2.rgt);
+        gen_add32(&ir->gen, val);
         break;
       }
       }

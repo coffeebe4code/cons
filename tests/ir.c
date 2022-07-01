@@ -15,6 +15,10 @@ void test_bin_op() {
   ast_t right = AST_Num(99);
   ast_t asts = AST_BinOp(&left, Plus, &right);
   ir_begin(&source, &asts);
+  ASSERT(source.block_id == 0);
+  ASSERT(source.reg_id == 3);
+  ASSERT(source.blocks.data[0].instructions.len == 3);
+  ASSERT(source.main_exit == 2);
   ir_free(&source);
 }
 

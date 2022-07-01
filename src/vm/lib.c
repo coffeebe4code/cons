@@ -50,7 +50,10 @@ vm_t vm_run(vm_t vm) {
     }
     case f64Const: {
       dst = READ_DST();
-      INC_IP64();
+      srcl = READ_SRCL();
+      if (srcl) {
+        INC_IP32();
+      }
       memcpy(&(vm.regs[dst]), vm.ip, sizeof(byte8_t));
       INC_IP64();
       break;

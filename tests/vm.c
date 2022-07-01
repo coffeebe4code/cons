@@ -121,10 +121,10 @@ typedef uint8_t byte_t;
 void test_bin() {
   // clang-format off
   byte_t test_data[40] = {
-      helper_exp2(), 0, f64Const,
+      1,1, 0, f64Const,
       helper_exp4(),
       77, helper_exp3(), helper_exp4(),
-      helper_exp2(), 1, f64Const,
+      1,1, 1, f64Const,
       helper_exp4(),
       77, helper_exp3(), helper_exp4(),
       0, 1, 1, f64Add, helper_exp3(), RetVoid};
