@@ -41,7 +41,7 @@ int main(int argc __attribute__((unused)),
       ir_begin(&ir_source, new_ast);
       vm_t vm = vm_new(ir_source.gen.binary);
       vm = vm_run(vm);
-      printf("result = %lu\n", vm.result);
+      printf("result = %llu\n", vm.result);
       ir_free(&ir_source);
       parser_free(&parse_source);
     }
