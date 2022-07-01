@@ -16,6 +16,7 @@ typedef struct {
 
 ir_source_t ir_new();
 void ir_begin(ir_source_t *source, ast_t *main);
+void ir_flush_gen(ir_source_t *ir);
 void ir_add(ir_source_t *source, ast_t *next);
 void ir_clean(ir_source_t *source);
 void ir_free(ir_source_t *source);
@@ -27,4 +28,5 @@ size_t ir_mulf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_divf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_subf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_modf64(ir_source_t *source, size_t left, size_t right);
+size_t ir_ret(ir_source_t *source, size_t val);
 #endif

@@ -41,12 +41,10 @@ vm_t vm_run(vm_t vm) {
     }
     case Ret: {
       vm.result = vm.regs[READ_DST()];
-      INC_IP32();
       cont = 0;
       break;
     }
     case RetVoid: {
-      INC_IP32();
       cont = 0;
       break;
     }

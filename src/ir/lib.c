@@ -3,6 +3,7 @@
 #include "../../include/list.h"
 #include "../../include/pros.h"
 #include "string.h"
+#include <stdint.h>
 
 LIST_USE(block_t, blocks, 1);
 LIST_USE(instr_t, instrs, 1);
@@ -38,6 +39,16 @@ instr_t make_data_instr(op_e op, byte_t dst, byte8_t data, size_t size) {
   instr_t val = (instr_t){
       .op = op, .dst = dst, .pt1.raw_data = data, .pt2.raw_size = size};
   return val;
+}
+
+void make_data_gen_instr(gen_source_t *gen, op_e op, byte_t dst, byte8_t data,
+                         size_t size) {
+  gen_add32(gen, make_gen_instr(op, dst, 0, 0));
+  uintptr_t addr = (uintptr_t)gen->current_pos;
+  if (addr % size != 0) {
+    gen_add32(gen, make_gen_instr(NoOp, 0, 0, 0));
+  };
+  gen_add64(gen, data);
 }
 
 byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
@@ -102,6 +113,7 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   }
   return result;
 }
+
 void ir_flush_gen(ir_source_t *ir) {
   for (size_t i = 0; i < ir->blocks.len; i++) {
     for (size_t j = 0; j < ir->blocks.data[i].instructions.len; j++) {
@@ -112,7 +124,9 @@ void ir_flush_gen(ir_source_t *ir) {
                         local_instr.pt1.raw_data, local_instr.pt2.raw_size);
         break;
       }
-
+      case Ret: {
+        make_gen_instr(Ret, local_instr.op, 0, 0);
+      }
       default: {
         make_gen_instr(local_instr.op, local_instr.dst, local_instr.pt1.lft,
                        local_instr.pt2.rgt);
@@ -136,6 +150,12 @@ size_t ir_constf64(ir_source_t *source, byte8_t data) {
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Add, source->reg_id++, left, right);
+  insert_instr(source, instr);
+  return instr.dst;
+}
+
+size_t ir_ret(ir_source_t *source, size_t val) {
+  instr_t instr = make_instr(Ret, val, 0, 0);
   insert_instr(source, instr);
   return instr.dst;
 }

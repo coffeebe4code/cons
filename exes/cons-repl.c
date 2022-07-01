@@ -39,6 +39,7 @@ int main(int argc __attribute__((unused)),
       ir_source = ir_new();
       ast_t *new_ast = parse_low_bin(&lex_source, &parse_source);
       ir_begin(&ir_source, new_ast);
+      ir_flush_gen(&ir_source);
       vm_t vm = vm_new(ir_source.gen.binary);
       vm = vm_run(vm);
       printf("result = %llu\n", vm.result);
