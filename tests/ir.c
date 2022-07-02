@@ -22,6 +22,8 @@ void test_bin_op() {
   ir_free(&source);
 }
 
+void test_instrs() {}
+
 void test_make_gen() {
   byte4_t val = make_gen_instr(f64Add, 1, 1, 1);
   ASSERT((val & 0xFF000000) >> 24 == f64Add);
@@ -34,5 +36,6 @@ int main() {
   DESCRIBE("ir");
   SHOULDF("test_bin_op", test_bin_op);
   SHOULDF("test make_gen_instr", test_make_gen);
+  SHOULDF("test instrs", test_instrs);
   RETURN();
 }

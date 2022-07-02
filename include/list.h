@@ -15,7 +15,7 @@
 #define LIST_USE(type, name, capacity)                                         \
   name##_l name##_new() {                                                      \
     name##_l val = {.len = 0, .cap = capacity, .data = NULL};                  \
-    val.data = calloc(sizeof(type), capacity);                                 \
+    val.data = calloc(capacity, sizeof(type));                                 \
     return val;                                                                \
   }                                                                            \
                                                                                \

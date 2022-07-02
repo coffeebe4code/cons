@@ -1,14 +1,15 @@
+# Big features
+- implement register allocation algorithm 
+- implement RAII
+
 # Possible Performance Improvements
-- lexemes are alloc'd in lexer.
+
+# TODO 07-01-2022
+- test failure in vm_run test_bin
+- rework asts to use indexes, and not pointers.
+- add insert into block capability, or add ret to cons-repl
+- finish implement blocks
 
 # TODO 06-19-2022
-- Load f64 consts in instr with 16 bit and then 32 bit
-- Implement blocks
-- Implement register allocation algorithm 
-- Implement RAII
-- Write tests for IR
-- Hook it all together in repl
-- Make interfaces better for repl
-- Add more to parser to make it complete for repl
-
+- write tests for IR
 

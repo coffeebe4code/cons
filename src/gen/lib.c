@@ -13,7 +13,7 @@ void gen_exit(void *ptr) {
 gen_source_t gen_new() {
   gen_source_t val = {
       .len = 0, .cap = 100, .binary = NULL, .current_pos = NULL};
-  val.binary = calloc(sizeof(unsigned char), 100);
+  val.binary = calloc(100, sizeof(unsigned char));
   gen_exit(val.binary);
   val.current_pos = val.binary;
   return val;
@@ -70,7 +70,7 @@ size_t gen_add64(gen_source_t *gen, byte8_t value) {
 
 void gen_print_hex(gen_source_t *gen) {
   for (size_t i = 0; i < gen->len; i++) {
-    printf("%x", gen->binary[i] & 0xff);
+    printf("%x", gen->binary[i]);
   }
   printf("\n");
 }

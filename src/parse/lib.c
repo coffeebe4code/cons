@@ -18,14 +18,15 @@ void parse_exit(void *ptr) {
 void check_size_parser(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
     parser->cap <<= 2;
-    void *ret = realloc(parser->asts, parser->cap);
+    ast_t *ret = realloc(parser->asts, parser->cap * sizeof(ast_t));
     parse_exit(ret);
+    parser->asts = ret;
   }
 }
 
 parser_source_t parser_new() {
-  parser_source_t val = {.len = 0, .cap = 100, .asts = NULL};
-  val.asts = calloc(sizeof(ast_t), 100);
+  parser_source_t val = {.len = 0, .cap = 1, .asts = NULL};
+  val.asts = calloc(1, sizeof(ast_t));
   parse_exit(val.asts);
   return val;
 }
