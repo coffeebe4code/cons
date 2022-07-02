@@ -54,6 +54,7 @@ vm_t vm_run(vm_t vm) {
       if (srcl) {
         INC_IP32();
       }
+      INC_IP32();
       memcpy(&(vm.regs[dst]), vm.ip, sizeof(byte8_t));
       INC_IP64();
       break;

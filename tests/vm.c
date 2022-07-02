@@ -120,7 +120,7 @@ typedef uint8_t byte_t;
 
 void test_bin() {
   // clang-format off
-  byte_t test_data[40] = {
+  byte_t test_data[40] __attribute__((aligned(8)))= {
       1,1, 0, f64Const,
       helper_exp4(),
       77, helper_exp3(), helper_exp4(),
