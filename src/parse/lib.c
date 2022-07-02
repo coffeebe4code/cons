@@ -18,9 +18,8 @@ void parse_exit(void *ptr) {
 void check_size_parser(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
     parser->cap <<= 2;
-    ast_t *ret = realloc(parser->asts, parser->cap * sizeof(ast_t));
-    parse_exit(ret);
-    parser->asts = ret;
+    parser->asts = realloc(parser->asts, parser->cap * sizeof(ast_t));
+    parse_exit(parser->asts);
   }
 }
 

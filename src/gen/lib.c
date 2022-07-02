@@ -14,6 +14,7 @@ gen_source_t gen_new() {
   gen_source_t val = {
       .len = 0, .cap = 100, .binary = NULL, .current_pos = NULL};
   val.binary = calloc(100, sizeof(unsigned char));
+  printf("og %p\n", val.binary);
   gen_exit(val.binary);
   val.current_pos = val.binary;
   return val;
@@ -21,9 +22,11 @@ gen_source_t gen_new() {
 
 void check_size_gen(gen_source_t *gen, uint8_t size) {
   if (gen->cap <= gen->len + size) {
-    gen->cap <<= 1;
+    gen->cap += (gen->cap << 1) + size;
     gen->binary = realloc(gen->binary, gen->cap * sizeof(byte_t));
+    printf("sized %p\n", gen->binary);
     gen_exit(gen->binary);
+    gen->current_pos = gen->binary + gen->len;
   }
   gen->len += size;
 }
@@ -75,4 +78,7 @@ void gen_print_hex(gen_source_t *gen) {
   printf("\n");
 }
 
-void gen_free(gen_source_t *gen) { free(gen->binary); }
+void gen_free(gen_source_t *gen) {
+  printf("free %p\n", gen->binary);
+  free(gen->binary);
+}
