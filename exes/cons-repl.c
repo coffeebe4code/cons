@@ -41,6 +41,7 @@ int main(int argc __attribute__((unused)),
       ir_begin(&ir_source, new_ast);
 
       ir_flush_gen(&ir_source);
+      gen_add32(&ir_source.gen, make_gen_instr(Ret, ir_source.main_exit, 0, 0));
       vm_t vm = vm_new(ir_source.gen.binary);
       vm = vm_run(vm);
       printf("result = %lu\n", vm.result);

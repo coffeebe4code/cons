@@ -46,7 +46,6 @@ void make_data_gen_instr(gen_source_t *gen, op_e op, byte_t dst, byte8_t data) {
   if (addr % 8 != 0) {
     gen_add32(gen, make_gen_instr(op, dst, 0, 0));
   } else {
-    puts("aligned already, adding noop");
     gen_add32(gen, make_gen_instr(op, dst, 1, 0));
     gen_add32(gen, make_gen_instr(NoOp, 0, 0, 0));
   }

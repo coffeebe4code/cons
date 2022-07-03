@@ -18,6 +18,7 @@ ir_source_t ir_new();
 void ir_begin(ir_source_t *source, ast_t *main);
 void ir_flush_gen(ir_source_t *ir);
 void ir_add(ir_source_t *source, ast_t *next);
+void ir_insert(block_t *block, ast_t *ast);
 void ir_clean(ir_source_t *source);
 void ir_free(ir_source_t *source);
 byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr);
