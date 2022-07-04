@@ -8,6 +8,7 @@
 #include "../include/pros.h"
 #include "../include/token.h"
 #include "../include/vm.h"
+#include "inttypes.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -44,7 +45,7 @@ int main(int argc __attribute__((unused)),
       gen_add32(&ir_source.gen, make_gen_instr(Ret, ir_source.main_exit, 0, 0));
       vm_t vm = vm_new(ir_source.gen.binary);
       vm = vm_run(vm);
-      printf("result = %lu\n", vm.result);
+      printf("result = %" PRIu64 "\n", vm.result);
       ir_free(&ir_source);
       parser_free(&parse_source);
     }
