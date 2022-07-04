@@ -65,12 +65,14 @@ void test_bin_op() {
   MOCK(is_num, 1);
   MOCK(is_low_bin, 1);
   MOCK(is_num, 1);
+  MOCK(is_high_bin, 0);
   MOCK(is_high_bin, 1);
   MOCK(is_num, 1);
 
   ast_t *val = parse_low_bin(&lex, &parse);
   ASSERT(val->expr_kind == BinOp);
-  ASSERT((int)val->tok1.bin_left_expr->tok1.number == 1);
+  ast_t *leftexpr = val->tok1.bin_left_expr;
+  ASSERT((int)leftexpr->tok1.number == 1);
   ASSERT(val->tok2.bin_op == Plus);
   ASSERT((int)val->tok3.bin_right_expr->tok1.bin_left_expr->tok1.number == 2);
   ASSERT(val->tok3.bin_right_expr->tok2.bin_op == Mul);

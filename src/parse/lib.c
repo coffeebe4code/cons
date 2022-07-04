@@ -18,7 +18,7 @@ void parse_exit(void *ptr) {
 void check_size_parser_serial(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
     parser->cap <<= 1;
-    parser->ez_free = realloc(parser->asts, parser->cap * sizeof(ast_t *));
+    parser->asts = realloc(parser->asts, parser->cap * sizeof(ast_t *));
     parse_exit(parser->asts);
   }
 }
@@ -94,7 +94,7 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
 }
 
 ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *left = parse_terminal(lexer, parser);
+  ast_t *left = parse_high_bin(lexer, parser);
   if (left != NULL) {
     while (is_low_bin(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
@@ -102,15 +102,17 @@ ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
       if (right == NULL) {
         return right;
       }
+      // left = 1
+      // right = 2 * 2
       ast_t combined = AST_BinOp(left, tok, right);
-      return parser_add_loose(parser, combined);
+      left = parser_add_loose(parser, combined);
     }
   }
   return left;
 }
 
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *left = parse_low_bin(lexer, parser);
+  ast_t *left = parse_terminal(lexer, parser);
   if (left != NULL) {
     while (is_high_bin(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
@@ -119,7 +121,7 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
         return right;
       }
       ast_t combined = AST_BinOp(left, tok, right);
-      return parser_add_loose(parser, combined);
+      left = parser_add_loose(parser, combined);
     }
   }
   return left;

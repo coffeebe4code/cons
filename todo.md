@@ -1,14 +1,12 @@
 # Big features
 - implement register allocation algorithm 
 - implement RAII
-
-# Possible Performance Improvements
+- implement at least one optimization
 
 ## TODO 07-03-2022
-- fix bug in parser around recursive low_bin and high_bin
 - add more parsing logic
 - dynamic typing
-- focus on math operations
+- focus on math operations correctness (pre): $-1
 
 ## TODO 07-01-2022
 - add insert into block capability
