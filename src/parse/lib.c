@@ -110,7 +110,7 @@ ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
 }
 
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *left = parse_terminal(lexer, parser);
+  ast_t *left = parse_low_bin(lexer, parser);
   if (left != NULL) {
     while (is_high_bin(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
