@@ -86,7 +86,8 @@ static inline token_e tokenize_number(char *data, int *len) {
         }
         break;
       default:
-        tok = Error;
+        tok = Num;
+        cont = 0;
       }
     }
   }
