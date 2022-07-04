@@ -1057,7 +1057,7 @@ int handle_args(int argc, char **argv) {
     Cstr_Array exe_deps = CSTRS();
     for (size_t i = 0; i < exe_count; i++) {
       for (size_t k = 1; k < exes[i].count; k++) {
-        exe_deps = cstr_array_append(links, exes[i].elems[k]);
+        exe_deps = cstr_array_append(exe_deps, exes[i].elems[k]);
       }
       exe_build(exes[i].elems[0], local_comp, exe_deps);
       exe_deps.elems = NULL;
@@ -1381,9 +1381,6 @@ void build(Cstr_Array comp_flags) {
     for (size_t k = 1; k < features[i].count; k++) {
       links = cstr_array_append(links, features[i].elems[k]);
     }
-    // obj_build(features[i].elems[0], comp_flags);
-    // obj_build_threaded(features[i].elems[0], comp_flags);
-    // test_build(features[i].elems[0], comp_flags, links);
     if (skip_tests == 0) {
       test_build(features[i].elems[0], comp_flags, links);
       EXEC_TESTS(features[i].elems[0]);
@@ -1394,7 +1391,7 @@ void build(Cstr_Array comp_flags) {
   Cstr_Array exe_deps = CSTRS();
   for (size_t i = 0; i < exe_count; i++) {
     for (size_t k = 1; k < exes[i].count; k++) {
-      exe_deps = cstr_array_append(links, exes[i].elems[k]);
+      exe_deps = cstr_array_append(exe_deps, exes[i].elems[k]);
     }
     exe_build(exes[i].elems[0], comp_flags, exe_deps);
     exe_deps.elems = NULL;

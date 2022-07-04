@@ -15,7 +15,7 @@
     dst = READ_DST();                                                          \
     srcl = READ_SRCL();                                                        \
     srcr = READ_SRCR();                                                        \
-    vm.regs[dst] = vm.regs[srcl] + vm.regs[srcr];                              \
+    vm.regs[dst] = vm.regs[srcl] op vm.regs[srcr];                             \
     INC_IP32();                                                                \
   } while (0);
 
@@ -40,18 +40,21 @@ vm_t vm_run(vm_t vm) {
       break;
     }
     case Ret: {
-      INC_IP32();
+      vm.result = vm.regs[READ_DST()];
       cont = 0;
       break;
     }
     case RetVoid: {
-      INC_IP32();
       cont = 0;
       break;
     }
     case f64Const: {
       dst = READ_DST();
-      INC_IP64();
+      srcl = READ_SRCL();
+      if (srcl) {
+        INC_IP32();
+      }
+      INC_IP32();
       memcpy(&(vm.regs[dst]), vm.ip, sizeof(byte8_t));
       INC_IP64();
       break;

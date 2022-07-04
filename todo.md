@@ -1,9 +1,17 @@
-# Possible Performance Improvements
-- lexemes are alloc'd in lexer.
+# Big features
+- implement register allocation algorithm 
+- implement RAII
+- implement at least one optimization
 
-# TODO
-- Implement IR
-- Figure out size and Instruction Use
-- Make macro for easy use with bytes in byte
-- Figure out best place for storing consts and other datas
-- Let registers and stack grow infinitely until reg alloc algorithm
+## TODO 07-03-2022
+- add more parsing logic
+- dynamic typing
+- focus on math operations correctness (pre): $-1
+
+## TODO 07-01-2022
+- add insert into block capability
+- finish implementing blocks
+
+## TODO 06-19-2022
+- write tests for IR
+

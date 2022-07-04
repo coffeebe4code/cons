@@ -1,4 +1,5 @@
 #include "../../include/ast.h"
+#include "../../include/hash.h"
 #include "../../include/lex.h"
 #include "../../include/lexeme.h"
 #include "../../include/parse.h"
@@ -14,25 +15,51 @@ void parse_exit(void *ptr) {
   }
 }
 
-void check_size(parser_source_t *parser) {
+void check_size_parser_serial(parser_source_t *parser) {
   if (parser->cap <= parser->len) {
-    parser->cap <<= 2;
-    void *ret = realloc(parser->asts, parser->cap);
-    parse_exit(ret);
+    parser->cap <<= 1;
+    parser->asts = realloc(parser->asts, parser->cap * sizeof(ast_t *));
+    parse_exit(parser->asts);
+  }
+}
+
+void check_size_parser_free(parser_source_t *parser) {
+  if (parser->free_cap <= parser->free_len) {
+    parser->free_cap <<= 1;
+    parser->ez_free =
+        realloc(parser->ez_free, parser->free_cap * sizeof(ast_t *));
+    parse_exit(parser->ez_free);
   }
 }
 
 parser_source_t parser_new() {
-  parser_source_t val = {.len = 0, .cap = 100, .asts = NULL};
-  val.asts = calloc(sizeof(ast_t), 100);
+  parser_source_t val = {.len = 0,
+                         .cap = 2,
+                         .asts = NULL,
+                         .ez_free = NULL,
+                         .free_cap = 2,
+                         .free_len = 0};
+  val.asts = calloc(2, sizeof(ast_t *));
+  val.ez_free = calloc(2, sizeof(ast_t *));
   parse_exit(val.asts);
   return val;
 }
 
-ast_t *parser_add(parser_source_t *parser, ast_t ast) {
-  check_size(parser);
-  void *ret = memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
-  return ret;
+ast_t *parser_add_loose(parser_source_t *parser, ast_t ast) {
+  check_size_parser_free(parser);
+  ast_t *new = malloc(sizeof(ast_t));
+  memcpy(new, &ast, sizeof(ast_t));
+  memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
+  return new;
+}
+
+ast_t *parser_add_serial(parser_source_t *parser, ast_t ast) {
+  check_size_parser_free(parser);
+  check_size_parser_serial(parser);
+  ast_t *new = malloc(sizeof(ast_t));
+  memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
+  memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
+  return new;
 }
 
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
@@ -41,8 +68,9 @@ ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
     char *symbol = malloc(sizeof(char) * val.span.len + 1);
     memcpy(symbol, val.span.ptr, val.span.len);
     symbol[val.span.len] = '\0';
-    ast_t ast = AST_Identifer(symbol);
-    return parser_add(parser, ast);
+    size_t hashval = hash(symbol);
+    ast_t ast = AST_Identifer(symbol, hashval);
+    return parser_add_loose(parser, ast);
   }
   return NULL;
 }
@@ -51,7 +79,7 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser) {
   if (is_num(lex_peek(lexer).tok)) {
     lexeme_t val = lex_collect(lexer);
     ast_t ast = AST_Num(atof(val.span.ptr));
-    return parser_add(parser, ast);
+    return parser_add_loose(parser, ast);
   }
   return NULL;
 }
@@ -66,7 +94,7 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
 }
 
 ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *left = parse_terminal(lexer, parser);
+  ast_t *left = parse_high_bin(lexer, parser);
   if (left != NULL) {
     while (is_low_bin(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
@@ -74,8 +102,10 @@ ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
       if (right == NULL) {
         return right;
       }
+      // left = 1
+      // right = 2 * 2
       ast_t combined = AST_BinOp(left, tok, right);
-      return parser_add(parser, combined);
+      left = parser_add_loose(parser, combined);
     }
   }
   return left;
@@ -91,52 +121,16 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
         return right;
       }
       ast_t combined = AST_BinOp(left, tok, right);
-      return parser_add(parser, combined);
+      left = parser_add_loose(parser, combined);
     }
   }
   return left;
 }
 
-int ast_print(ast_t *ast, char *print) {
-  char *initial = print;
-  switch (ast->expr_kind) {
-  case Number: {
-    print += snprintf(print, 1000, "%" PRIu64, ast->tok1.number);
-  } break;
-  case Identifier:
-    print = memcpy(print, ast->tok1.ident, strlen(ast->tok1.ident));
-    if (print != NULL) {
-      print += strlen(ast->tok1.ident);
-    }
-    break;
-  case BinOp:
-    *print = '(';
-    print++;
-    print += ast_print(ast->tok1.bin_left_expr, print);
-    print += snprintf(print, 1000, " %d ", (int)(ast->tok2.bin_op));
-    print += ast_print(ast->tok3.bin_right_expr, print);
-    *print = ')';
-    print++;
-    break;
-  default: {
-    char *na = "( NA )";
-    print = memcpy(print, na, 6);
-    if (print != NULL) {
-      print += 6;
-    }
-    break;
+void parser_free(parser_source_t *parser) {
+  for (size_t i = 0; i < parser->free_len; i++) {
+    free(parser->ez_free[i]);
   }
-  }
-  return print - initial;
+  free(parser->asts);
+  free(parser->ez_free);
 }
-
-char *parser_get(ast_t *ast) {
-  char *buffer = calloc(1000, sizeof(char));
-  int len = ast_print(ast, buffer);
-  if (len == 0) {
-    strcpy(buffer, "NONE");
-  }
-  return buffer;
-}
-
-void parser_free(parser_source_t *parser) { free(parser->asts); }
