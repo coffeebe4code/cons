@@ -15,6 +15,7 @@ lex_source_t lex_new(char *start);
 int is_num(token_e tok);
 int is_bin_op(token_e tok);
 int is_high_bin(token_e tok);
+int is_reassign(token_e tok);
 int is_low_bin(token_e tok);
 int is_expr(token_e tok);
 int is_un_op(token_e tok);
