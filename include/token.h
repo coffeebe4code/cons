@@ -210,6 +210,7 @@ typedef enum token_e {
   Hex,
   Bin,
   Num,
+  Decimal,
   NewLine,
   Wsp,
   Error,

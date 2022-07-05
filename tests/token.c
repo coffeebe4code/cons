@@ -39,12 +39,12 @@ void test_nums() {
 
   char *chars4 = "7.0";
   token = token_next(chars4, &len);
-  ASSERT(token == Dec);
+  ASSERT(token == Decimal);
   ASSERT(len == 3);
 
-  char *chars5 = "17.0";
+  char *chars5 = "17.0 ";
   token = token_next(chars5, &len);
-  ASSERT(token == Dec);
+  ASSERT(token == Decimal);
   ASSERT(len == 4);
 
   char *chars6 = "0";
@@ -52,15 +52,20 @@ void test_nums() {
   ASSERT(token == Num);
   ASSERT(len == 1);
 
-  char *chars7 = "0b001";
+  char *chars7 = "0b001 ";
   token = token_next(chars7, &len);
   ASSERT(token == Bin);
   ASSERT(len == 5);
 
-  char *chars8 = "0x0aF";
+  char *chars8 = "0x0aF ";
   token = token_next(chars8, &len);
   ASSERT(token == Hex);
   ASSERT(len == 5);
+
+  char *chars9 = "0 ";
+  token = token_next(chars9, &len);
+  ASSERT(token == Num);
+  ASSERT(len == 1);
 }
 
 void test_chars() {
@@ -70,7 +75,7 @@ void test_chars() {
   ASSERT(token == SQuote);
   ASSERT(len == 1);
 
-  char *chars2 = "'\\n'";
+  char *chars2 = "'\\n' ";
   token = token_next(chars2, &len);
   ASSERT(token == SQuote);
   ASSERT(len == 2);
@@ -93,7 +98,7 @@ void test_strings() {
   ASSERT(token == DQuote);
   ASSERT(len == 5);
 
-  char *strings2 = "\"henl\\nlo\"";
+  char *strings2 = "\"henl\\nlo\" ";
   token = token_next(strings2, &len);
   ASSERT(token == DQuote);
   ASSERT(len == 8);
