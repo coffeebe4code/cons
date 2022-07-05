@@ -14,7 +14,6 @@ int main(int argc, char **argv) {
   FEATURE("parse");
   FEATURE("vm");
   FEATURE("gen");
-  FEATURE("arch");
   FEATURE("config");
   FEATURE("ir");
   FEATURE("byte");

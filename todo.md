@@ -9,7 +9,6 @@
 ## TODO 07-03-2022
 - add more parsing logic
 - dynamic typing or provide compile time types better
-- implement results or matches.
 - focus on math operations correctness (pre): $-1
 
 ## TODO 07-01-2022
