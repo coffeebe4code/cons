@@ -39,12 +39,12 @@ void test_nums() {
 
   char *chars4 = "7.0";
   token = token_next(chars4, &len);
-  ASSERT(token == Dec);
+  ASSERT(token == Decimal);
   ASSERT(len == 3);
 
   char *chars5 = "17.0 ";
   token = token_next(chars5, &len);
-  ASSERT(token == Dec);
+  ASSERT(token == Decimal);
   ASSERT(len == 4);
 
   char *chars6 = "0";

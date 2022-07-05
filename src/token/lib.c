@@ -73,7 +73,7 @@ static inline token_e tokenize_number(char *data, int *len) {
         if (*len == 2) {
           tok = Error;
         } else {
-          tok = Dec;
+          tok = Decimal;
         }
         break;
       case 'x':
@@ -91,7 +91,7 @@ static inline token_e tokenize_number(char *data, int *len) {
       }
     }
   }
-  if (tok == Error || tok == Hex || tok == Dec) {
+  if (tok == Error || tok == Hex || tok == Decimal) {
     return tok;
   }
   while (*data != '\0' && cont) {
@@ -103,7 +103,7 @@ static inline token_e tokenize_number(char *data, int *len) {
       case '.':
         (*len)++;
         collect_digits(data, len);
-        tok = Dec;
+        tok = Decimal;
         cont = 0;
         break;
       default:

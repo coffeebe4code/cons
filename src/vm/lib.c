@@ -75,6 +75,10 @@ vm_t vm_run(vm_t vm) {
       BINARY_OP(-);
       break;
     }
+    case f64Mod: {
+      BINARY_OP(%);
+      break;
+    }
     default: {
       cont = 0;
       break;
