@@ -62,14 +62,6 @@ ast_t *parser_add_serial(parser_source_t *parser, ast_t ast) {
   return new;
 }
 
-ast_t *parse_scolon(lex_source_t *lexer, parser_source_t *parser) {
-  if (lex_peek(lexer).tok == SColon) {
-    ast_t ast = AST_Identifer(symbol, hashval);
-    return parser_add_loose(parser, ast);
-  }
-  return NULL;
-}
-
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
   if (lex_peek(lexer).tok == Symbol) {
     lexeme_t val = lex_collect(lexer);
@@ -132,13 +124,38 @@ ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
   return left;
 }
 
+ast_t *parse_assign(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *ident = parse_ident(lexer, parser);
+  if (ident != NULL) {
+    if (is_reassign(lex_peek(lexer).tok)) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *low = parse_low_bin(lexer, parser);
+      if (low != NULL) {
+        token_e semi = lex_peek(lexer).tok;
+        if (semi == SColon) {
+          semi = lex_collect(lexer).tok;
+        }
+        ast_t combined = AST_Reassign(ident, tok, low, semi == SColon ? 1 : 0);
+        ident = parser_add_serial(parser, combined);
+      }
+    }
+  }
+  return ident;
+}
+
 ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *ident = parse_ident(lexer, parser);
   if (ident != NULL) {
     if (is_reassign(lex_peek(lexer).tok)) {
+      token_e tok = lex_collect(lexer).tok;
       ast_t *low = parse_low_bin(lexer, parser);
       if (low != NULL) {
-        ast_t * semi = parse_semi(
+        token_e semi = lex_peek(lexer).tok;
+        if (semi == SColon) {
+          semi = lex_collect(lexer).tok;
+        }
+        ast_t combined = AST_Reassign(ident, tok, low, semi == SColon ? 1 : 0);
+        ident = parser_add_serial(parser, combined);
       }
     }
   }

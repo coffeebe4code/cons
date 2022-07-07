@@ -53,12 +53,16 @@ block           => "{" statement+ "}" ;
 
 implement grammar    
 ```
-statement       => expression* | return ; // initially only expressions and a final return is supported
-return          => "return" low_bin ";"? ;
-expression      => assignment | reassignment; 
+declaration     => "pub"? ("type", "const", "mut", "static") assignment;
 
-assignment      => ("const" | "mut") IDENTIFIER ( "=" ) low_bin ";"? ;
+statement       => expression* | return ; 
+return          => "return" low_bin ";"? ;
+expression      => partial | reassignment; 
+
+partial         => ("const" | "mut") assignment;
+assignment      => IDENTIFIER ( "=" ) low_bin ";"? ;
 reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin ";"? ;
+comp            => low_bin ( ( ">" | ">=" | "<" | "<=" ) low_bin )* ;
 low_bin         => high_bin ( ( "-" | "+") high_bin )* ;
 high_bin        => TERMINAL ( ( "/" | "*" | "%" ) TERMINAL )* ;
 
