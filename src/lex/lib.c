@@ -116,6 +116,20 @@ int is_high_bin(token_e tok) {
   }
 }
 
+int is_comp(token_e tok) {
+  switch (tok) {
+  case Lt:
+  case LtEq:
+  case Gt:
+  case GtEq:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
 int is_bin_op(token_e tok) {
   switch (tok) {
   case Lt:

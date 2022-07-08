@@ -17,6 +17,7 @@ int is_bin_op(token_e tok);
 int is_high_bin(token_e tok);
 int is_reassign(token_e tok);
 int is_low_bin(token_e tok);
+int is_comp(token_e tok);
 int is_expr(token_e tok);
 int is_un_op(token_e tok);
 int is_lit(token_e tok);

@@ -2,8 +2,17 @@
 #include "byte.h"
 #include "lexeme.h"
 
-typedef enum expr_e { Expr, Reassign, Number, Identifier, BinOp, UnOp } expr_e;
+typedef enum expr_e {
+  Expr,
+  Assign,
+  Reassign,
+  Number,
+  Identifier,
+  BinOp,
+  UnOp
+} expr_e;
 
+// Assign 4 .ident_ptr .type .assignment .semi
 // Reassign 4 .ident_ptr .as_op .assignment .semi
 // Number 2 .number .type
 // Identifier 2 .ident .ident_hash
@@ -44,10 +53,16 @@ typedef struct ast_t {
     .expr_kind = Identifier, .tok1.ident = val, .tok2.ident_hash = hash        \
   }
 
-#define AST_Reassign(ident, op, assignment, semi)                              \
+#define AST_Reassign(ident, op, asgn, has_semi)                                \
   (ast_t) {                                                                    \
     .expr_kind = Reassign, .tok1.ident_ptr = ident, .tok2.as_op = op,          \
-    .tok3.assignment = assignment, .tok4.semi = semi                           \
+    .tok3.assignment = asgn, .tok4.semi = has_semi                             \
+  }
+
+#define AST_Assign(ident, mutability, asgn, has_semi)                          \
+  (ast_t) {                                                                    \
+    .expr_kind = Reassign, .tok1.ident_ptr = ident, .tok2.type = mutability,   \
+    .tok3.assignment = asgn, .tok4.semi = has_semi                             \
   }
 
 #define AST_BinOp(left, tok, right)                                            \
