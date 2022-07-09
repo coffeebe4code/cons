@@ -119,6 +119,10 @@ void test_easy() {
 }
 
 void test_keywords() {
+  char *ret = "return 7;";
+  int len = 0;
+  token_e tok = token_next(ret, &len);
+  ASSERT(tok == Return);
   for (size_t i = 0; i < KEYWORD_LENGTH; i++) {
     int len = 0;
     token_e token = token_next(keyword_list[i], &len);

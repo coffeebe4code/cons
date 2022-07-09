@@ -57,7 +57,8 @@ ast_t *parser_add_serial(parser_source_t *parser, ast_t ast) {
   check_size_parser_free(parser);
   check_size_parser_serial(parser);
   ast_t *new = malloc(sizeof(ast_t));
-  memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
+  memcpy(new, &ast, sizeof(ast_t));
+  memcpy(&parser->asts[parser->len++], &new, sizeof(ast_t *));
   memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
   return new;
 }
@@ -181,7 +182,6 @@ ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
       token_e tok = lex_collect(lexer).tok;
       ast_t *comp = parse_comp(lexer, parser);
       if (comp != NULL) {
-        token_e semi = lex_peek(lexer).tok;
         int has_semi = has_token_consume(lexer, SColon);
         ast_t combined = AST_Reassign(ident, tok, comp, has_semi);
         ident = parser_add_serial(parser, combined);
