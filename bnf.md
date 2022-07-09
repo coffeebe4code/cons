@@ -37,12 +37,11 @@ block           => "{" statement+ "}" ;
 
 implemented grammer  
 ```
-
 statement       => expression* | return ; 
 return          => "return" low_bin ";"? ;
 expression      => inner_asgnmt | reassignment; 
 
-inner_asgnmt      => ( "const" | "mut" ) IDENTIFIER ( "=" ) low_bin ";"? ;
+inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) low_bin ";"? ;
 reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin ";"? ;
 comp            => low_bin ( ( ">" | ">=" | "<" | "<=" ) low_bin )* ;
 low_bin         => high_bin ( ( "-" | "+") high_bin )* ;

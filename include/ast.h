@@ -4,6 +4,7 @@
 
 typedef enum expr_e {
   Expr,
+  Ret,
   Assign,
   Reassign,
   Number,

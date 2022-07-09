@@ -161,8 +161,7 @@ ast_t *parse_assign(lex_source_t *lexer, parser_source_t *parser) {
   if (has_token != Empty) {
     ident = parse_ident(lexer, parser);
     if (ident != NULL) {
-      if (is_reassign(lex_peek(lexer).tok)) {
-        token_e tok = lex_collect(lexer).tok;
+      if (has_token_consume(lexer, As)) {
         ast_t *low = parse_low_bin(lexer, parser);
         if (low != NULL) {
           int has_semi = has_token_consume(lexer, SColon);
@@ -194,6 +193,18 @@ ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
     }
   }
   return ident;
+}
+
+ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *comp = NULL;
+  if (has_token_consume(lexer, Return)) {
+    comp = parse_comp(lexer, parser);
+    if (comp != NULL) {
+      ast_t combined = AST_Reassign(ident, tok, low, has_semi);
+      comp = parser_add_serial(parser, combined);
+    }
+  }
+  return comp;
 }
 
 void parser_free(parser_source_t *parser) {
