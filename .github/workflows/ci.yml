@@ -7,6 +7,17 @@ on:
     branches:
       - main
 jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: egor-tensin/setup-cygwin@v3
+      - name: cygwin
+        with:
+          platform: x64
+          packages: gcc
+        run: |
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          ./nobuild -d
   build-linux:
     runs-on: ubuntu-latest
     steps:
