@@ -102,9 +102,9 @@ void test_reassign() {
   MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   MOCK(lex_peek, (lexeme_t){.tok = AddAs});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
-  MOCK(lex_peek, (lexeme_t){.tok = Num});
-  MOCK(lex_peek, (lexeme_t){.tok = Num});
-  MOCK(lex_peek, (lexeme_t){.tok = Num});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   lexeme_t mocked_lex =
       (lexeme_t){.tok = Symbol, .span = (span_t){.ptr = input, .len = 1}};
@@ -116,6 +116,7 @@ void test_reassign() {
   mocked_lex = (lexeme_t){.tok = SColon, .span = (span_t){.ptr = input + 6}};
   MOCK(lex_collect, mocked_lex);
   MOCK(is_comp, 0);
+  MOCK(is_reassign, 1);
   MOCK(is_low_bin, 0);
   MOCK(is_high_bin, 0);
   MOCK(is_num, 1);
