@@ -13,6 +13,10 @@ jobs:
       run:
         shell: C:\tools\cygwin\bin\bash.exe --login -o igncr '{0}'   
     steps:
+      - uses: actions/checkout@v1
+      - name: check dir
+        run: |
+          dir
       - uses: egor-tensin/setup-cygwin@v3
       - name: build
         run: |
