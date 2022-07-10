@@ -14,11 +14,9 @@ jobs:
         shell: C:\tools\cygwin\bin\bash.exe -o igncr '{0}'   
     steps:
       - name: checkout
-      - uses: actions/checkout@v1
-        run: |
-          ls
+        uses: actions/checkout@v1
       - name: build
-      - uses: egor-tensin/setup-cygwin@v3
+        uses: egor-tensin/setup-cygwin@v3
         run: |
           ls
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
