@@ -57,17 +57,32 @@ ast_t *parser_add_serial(parser_source_t *parser, ast_t ast) {
   check_size_parser_free(parser);
   check_size_parser_serial(parser);
   ast_t *new = malloc(sizeof(ast_t));
-  memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t));
+  memcpy(new, &ast, sizeof(ast_t));
+  memcpy(&parser->asts[parser->len++], &new, sizeof(ast_t *));
   memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
   return new;
+}
+
+int has_token_consume(lex_source_t *lexer, token_e tok) {
+  if (lex_peek(lexer).tok == tok) {
+    lex_collect(lexer);
+    return 1;
+  }
+  return 0;
+}
+
+token_e has_either_consume2(lex_source_t *lexer, token_e tok1, token_e tok2) {
+  if (lex_peek(lexer).tok == tok1 || lex_peek(lexer).tok == tok2) {
+    return lex_collect(lexer).tok;
+  }
+  return Empty;
 }
 
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
   if (lex_peek(lexer).tok == Symbol) {
     lexeme_t val = lex_collect(lexer);
-    char *symbol = malloc(sizeof(char) * val.span.len + 1);
+    char *symbol = calloc(val.span.len + 1, sizeof(char));
     memcpy(symbol, val.span.ptr, val.span.len);
-    symbol[val.span.len] = '\0';
     size_t hashval = hash(symbol);
     ast_t ast = AST_Identifer(symbol, hashval);
     return parser_add_loose(parser, ast);
@@ -93,24 +108,6 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   return val;
 }
 
-ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *left = parse_high_bin(lexer, parser);
-  if (left != NULL) {
-    while (is_low_bin(lex_peek(lexer).tok)) {
-      token_e tok = lex_collect(lexer).tok;
-      ast_t *right = parse_high_bin(lexer, parser);
-      if (right == NULL) {
-        return right;
-      }
-      // left = 1
-      // right = 2 * 2
-      ast_t combined = AST_BinOp(left, tok, right);
-      left = parser_add_loose(parser, combined);
-    }
-  }
-  return left;
-}
-
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *left = parse_terminal(lexer, parser);
   if (left != NULL) {
@@ -125,6 +122,84 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
     }
   }
   return left;
+}
+
+ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *left = parse_high_bin(lexer, parser);
+  if (left != NULL) {
+    while (is_low_bin(lex_peek(lexer).tok)) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_high_bin(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      left = parser_add_loose(parser, combined);
+    }
+  }
+  return left;
+}
+
+ast_t *parse_comp(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *left = parse_low_bin(lexer, parser);
+  if (left != NULL) {
+    while (is_comp(lex_peek(lexer).tok)) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_low_bin(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      left = parser_add_loose(parser, combined);
+    }
+  }
+  return left;
+}
+
+ast_t *parse_assign(lex_source_t *lexer, parser_source_t *parser) {
+  token_e has_token = has_either_consume2(lexer, Const, Mut);
+  ast_t *ident = NULL;
+  if (has_token != Empty) {
+    ident = parse_ident(lexer, parser);
+    if (ident != NULL) {
+      if (has_token_consume(lexer, As)) {
+        ast_t *low = parse_low_bin(lexer, parser);
+        if (low != NULL) {
+          int has_semi = has_token_consume(lexer, SColon);
+          ast_t combined = AST_Assign(ident, has_token, low, has_semi);
+          ident = parser_add_serial(parser, combined);
+        }
+      }
+    }
+  }
+  return ident;
+}
+
+ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *ident = parse_ident(lexer, parser);
+  if (ident != NULL) {
+    if (is_reassign(lex_peek(lexer).tok)) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *comp = parse_comp(lexer, parser);
+      if (comp != NULL) {
+        int has_semi = has_token_consume(lexer, SColon);
+        ast_t combined = AST_Reassign(ident, tok, comp, has_semi);
+        ident = parser_add_serial(parser, combined);
+      }
+    }
+  }
+  return ident;
+}
+
+ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *comp = NULL;
+  if (has_token_consume(lexer, Return)) {
+    comp = parse_comp(lexer, parser);
+    int has_semi = has_token_consume(lexer, SColon);
+    ast_t combined = AST_Return(comp, has_semi);
+    comp = parser_add_serial(parser, combined);
+  }
+  return comp;
 }
 
 void parser_free(parser_source_t *parser) {

@@ -85,11 +85,43 @@ int is_low_bin(token_e tok) {
   }
 }
 
+int is_reassign(token_e tok) {
+  switch (tok) {
+  case As:
+  case DivAs:
+  case SubAs:
+  case AddAs:
+  case MulAs:
+  case AndAs:
+  case XorAs:
+  case OrAs:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
 int is_high_bin(token_e tok) {
   switch (tok) {
   case Div:
   case Mul:
   case Mod:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_comp(token_e tok) {
+  switch (tok) {
+  case Lt:
+  case LtEq:
+  case Gt:
+  case GtEq:
     return 1;
     break;
   default:

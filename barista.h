@@ -188,6 +188,10 @@ void OKAY(Cstr fmt, ...) NOBUILD_PRINTF_FORMAT(1, 2);
 #ifndef NO_MOCKING
 #define COMMA_D __attribute__((unused)),
 #define COMMA ,
+#define MOCK_RESET(name)                                                       \
+  __var_##name##_inc = 0;                                                      \
+  __var_##name##_actual = 0;
+
 #define DECLARE_MOCK(type, name, arguments)                                    \
   type __var_##name[255];                                                      \
   size_t __var_##name##_inc = 0;                                               \
