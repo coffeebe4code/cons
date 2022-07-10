@@ -11,12 +11,11 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: C:\tools\cygwin\bin\bash.exe --login -o igncr '{0}'   
+        shell: C:\tools\cygwin\bin\bash.exe -o igncr '{0}'   
     steps:
       - uses: egor-tensin/setup-cygwin@v3
       - name: build
         run: |
-          cd ${{ github.workspace }}
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
           ./nobuild -d
   build-linux:
