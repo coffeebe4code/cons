@@ -14,7 +14,5 @@
 ## TODO 07-01-2022
 - add insert into block capability
 - finish implementing blocks
-
-## TODO 06-19-2022
-- write tests for IR
+- write tests for IR (pre): $-1
 
