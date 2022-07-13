@@ -140,7 +140,9 @@ LIST_DECL(instr_t, instrs);
 typedef struct {
   size_t *preds;
   size_t *succs;
-  size_t label_id;
+  size_t hash;
+  size_t block_id;
+  char **label;
   instrs_l instructions;
   block_e kind;
 } block_t;

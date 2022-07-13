@@ -20,14 +20,16 @@ instr_t make_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   return val;
 }
 
-void insert_instr(ir_source_t *ir, instr_t instr) {
-  instrs_add(&ir->blocks.data[ir->block_id].instructions, instr);
+void insert_instr(ir_source_t *ir, instr_t instr, size_t block_id) {
+  instrs_add(&ir->blocks.data[block_id].instructions, instr);
 }
 
-void new_block(ir_source_t *ir) {
+void new_block(ir_source_t *ir, size_t hash, char **label) {
   block_t new = (block_t){.preds = NULL,
                           .succs = NULL,
-                          .label_id = ++ir->block_id,
+                          .label = label,
+                          .block_id = ++ir->block_id,
+                          .hash = hash,
                           .instructions = instrs_new(),
                           .kind = PlainBlock};
   if (blocks_add(&ir->blocks, new)) {
@@ -61,13 +63,13 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   return val;
 }
 
-ir_source_t ir_new() {
+ir_source_t ir_new(size_t hash, char **block_name) {
   ir_source_t val = {
       .blocks = blocks_new(), .block_id = -1, .reg_id = 0, .gen = gen_new()};
   if (val.blocks.data == NULL) {
     ir_exit();
   }
-  new_block(&val);
+  new_block(&val, hash, block_name);
   return val;
 }
 
@@ -145,46 +147,48 @@ void ir_begin(ir_source_t *ir, ast_t *main) {
   ir->main_exit = ir_recurse(ir, main);
 }
 
+void ir_rebuild_block(ir_source_t *ir, ast_t **lines, size_t block_id) {}
+
 size_t ir_constf64(ir_source_t *source, byte8_t data) {
   instr_t instr =
       make_data_instr(f64Const, source->reg_id++, data, sizeof(double));
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Add, source->reg_id++, left, right);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_ret(ir_source_t *source, size_t val) {
   instr_t instr = make_instr(Ret, val, 0, 0);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_mulf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Mul, source->reg_id++, left, right);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_divf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Div, source->reg_id++, left, right);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_subf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Sub, source->reg_id++, left, right);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
 size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
   instr_t instr = make_instr(f64Mod, source->reg_id++, left, right);
-  insert_instr(source, instr);
+  insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
 
