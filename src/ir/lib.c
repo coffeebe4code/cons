@@ -24,11 +24,11 @@ void insert_instr(ir_source_t *ir, instr_t instr, size_t block_id) {
   instrs_add(&ir->blocks.data[block_id].instructions, instr);
 }
 
-void new_block(ir_source_t *ir, size_t hash, char **label) {
+void new_block(ir_source_t *ir, size_t hash, char **label, size_t block_id) {
   block_t new = (block_t){.preds = NULL,
                           .succs = NULL,
                           .label = label,
-                          .block_id = ++ir->block_id,
+                          .block_id = block_id,
                           .hash = hash,
                           .instructions = instrs_new(),
                           .kind = PlainBlock};
@@ -69,7 +69,7 @@ ir_source_t ir_new(size_t hash, char **block_name) {
   if (val.blocks.data == NULL) {
     ir_exit();
   }
-  new_block(&val, hash, block_name);
+  new_block(&val, hash, block_name, ++val.block_id);
   return val;
 }
 
@@ -146,8 +146,6 @@ void ir_flush_gen(ir_source_t *ir) {
 void ir_begin(ir_source_t *ir, ast_t *main) {
   ir->main_exit = ir_recurse(ir, main);
 }
-
-void ir_rebuild_block(ir_source_t *ir, ast_t **lines, size_t block_id) {}
 
 size_t ir_constf64(ir_source_t *source, byte8_t data) {
   instr_t instr =

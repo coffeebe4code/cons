@@ -30,7 +30,7 @@ properties      => ("pub"? IDENTIFIER ":" (IDENTIFIER | VAL_TYPE) ";"?) properti
 
 root_assignment => "pub"? assignment ;
 function        => "pub"? IDENTIFIER "(" parameters? ")" (":" VAL_TYPE | IDENTIFIER )? block ;
-block           => "{" statement+ "}" ;
+block           => "{" statement* "}" ;
 
 
 ```
@@ -38,16 +38,17 @@ block           => "{" statement+ "}" ;
 implemented grammer  
 ```
 statement       => expression* | return ; 
-return          => "return" low_bin? ";"? ;
+return          => "return"? comp? ";"? ;
 expression      => inner_asgnmt | reassignment; 
 
 inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) low_bin ";"? ;
-reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin ";"? ;
+reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin) ";"? ;
 comp            => low_bin ( ( ">" | ">=" | "<" | "<=" ) low_bin )* ;
 low_bin         => high_bin ( ( "-" | "+") high_bin )* ;
-high_bin        => TERMINAL ( ( "/" | "*" | "%" ) TERMINAL )* ;
+high_bin        => unary ( ( "/" | "*" | "%" ) unary )* ;
+unary           => ( "!" | "-" ) unary | call; // call not implemented
 
-TERMINAL        => NUMBER | IDENTIFIER ;
+TERMINAL        => "true" | "false" | "null" | NUMBER | IDENTIFIER ;
 NUMBER          => DIGIT+ ( "." DIGIT+ )? ;
 IDENTIFIER      => < any ALPHA except "_" > ( ALPHA | DIGIT )* ;
 ```
