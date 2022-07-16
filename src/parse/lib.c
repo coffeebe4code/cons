@@ -101,9 +101,24 @@ ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
 }
 
 ast_t *parse_true(lex_source_t *lexer, parser_source_t *parser) {
-  token_e tok = has_token_consume(lexer, True);
-  if (tok != Empty) {
-    ast_t ast = AST_Num(atof(val.span.ptr));
+  if (has_token_consume(lexer, True)) {
+    ast_t ast = AST_Single(True);
+    return parser_add_loose(parser, ast);
+  }
+  return NULL;
+}
+
+ast_t *parse_false(lex_source_t *lexer, parser_source_t *parser) {
+  if (has_token_consume(lexer, False)) {
+    ast_t ast = AST_Single(False);
+    return parser_add_loose(parser, ast);
+  }
+  return NULL;
+}
+
+ast_t *parse_null(lex_source_t *lexer, parser_source_t *parser) {
+  if (has_token_consume(lexer, Null)) {
+    ast_t ast = AST_Single(Null);
     return parser_add_loose(parser, ast);
   }
   return NULL;
@@ -120,10 +135,17 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser) {
 
 ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *val = NULL;
-  val = parse_true val = parse_num(lexer, parser);
+  val = parse_true(lexer, parser);
   if (val == NULL) {
-    val = parse_ident(lexer, parser);
+    val = parse_false(lexer, parser);
     if (val == NULL) {
+      val = parse_null(lexer, parser);
+      if (val == NULL) {
+        val = parse_num(lexer, parser);
+        if (val == NULL) {
+          val = parse_ident(lexer, parser);
+        }
+      }
     }
   }
   return val;
