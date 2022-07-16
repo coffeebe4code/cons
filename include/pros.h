@@ -1,5 +1,4 @@
-#ifndef __PROS__
-#define __PROS__
+#pragma once
 #include "byte.h"
 #include "list.h"
 #include "stdio.h"
@@ -148,5 +147,3 @@ typedef struct {
 } block_t;
 
 LIST_DECL(block_t, blocks);
-
-#endif

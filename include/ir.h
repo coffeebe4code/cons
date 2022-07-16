@@ -1,5 +1,4 @@
-#ifndef __IR__
-#define __IR__
+#pragma once
 #include "ast.h"
 #include "byte.h"
 #include "gen.h"
@@ -31,4 +30,3 @@ size_t ir_divf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_subf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_modf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_ret(ir_source_t *source, size_t val);
-#endif
