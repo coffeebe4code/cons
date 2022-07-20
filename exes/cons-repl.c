@@ -28,7 +28,7 @@ int main(int argc __attribute__((unused)),
     parser_source_t parse_source;
     ir_source_t ir_source;
     if (fgets(input, USER_SIZE, stdin) == NULL) {
-      ERROR(&(error_t){memory, {0}, 0}, "fgets failed in repl");
+      ERROR(&(cons_error_t){memory, {0}, 0}, "fgets failed in repl");
       exit(1);
     }
     if (input[0] == '/' && input[1] == '/') {

@@ -30,14 +30,15 @@ void POINTER(FILE *stream, char *source_message, int pointer_loc, char *tag,
   free(empty2);
 }
 
-void ERROR(error_t *err, char *fmt, ...) {
+void ERROR(cons_error_t *err, char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
   BUILDER(stderr, "ERROR", error_kinds[err->err_kind], fmt, args);
   va_end(args);
 }
 
-void ERROR_PTR(error_t *err, char *message, int pointer_loc, char *fmt, ...) {
+void ERROR_PTR(cons_error_t *err, char *message, int pointer_loc, char *fmt,
+               ...) {
   va_list args;
   va_start(args, fmt);
   fprintf(stderr, "[ERROR] %s => file: %s => line: %d\n",

@@ -7,6 +7,18 @@ on:
     branches:
       - main
 jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: setup mingw
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          static: 1
+      - run: |
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          ./nobuild -r
   build-linux:
     runs-on: ubuntu-latest
     steps:

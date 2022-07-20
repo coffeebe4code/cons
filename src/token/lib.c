@@ -6,8 +6,8 @@
 static inline void collect_hex(char *data, int *len) {
   int cont = 1;
   data++;
-  while (*data != '\0' && cont) {
-    if (isdigit(*data)) {
+  while ((int)*data != '\0' && cont) {
+    if (isdigit((int)*data)) {
       (*len)++;
       data++;
     } else if ((*data >= 'a' && *data <= 'f') ||
@@ -24,7 +24,7 @@ static inline void collect_digits(char *data, int *len) {
   int cont = 1;
   data++;
   while (*data != '\0' && cont) {
-    if (isdigit(*data)) {
+    if (isdigit((int)*data)) {
       (*len)++;
       data++;
     } else {
@@ -52,7 +52,7 @@ static inline token_e tokenize_number(char *data, int *len) {
   if (*data == '0') {
     (*len)++;
     data++;
-    if (*data != '\0' && isdigit(*data)) {
+    if ((int)*data != '\0' && isdigit((int)*data)) {
       (*len)++;
     } else {
       switch (*data) {
@@ -95,7 +95,7 @@ static inline token_e tokenize_number(char *data, int *len) {
     return tok;
   }
   while (*data != '\0' && cont) {
-    if (isdigit(*data)) {
+    if (isdigit((int)*data)) {
       (*len)++;
       data++;
     } else {
@@ -274,7 +274,7 @@ inline size_t word_len_check(char *data) {
   int next = 1;
   size_t len = 1;
   while (*++data != '\0' && next) {
-    if (isalnum(*data)) {
+    if (isalnum((int)*data)) {
       len++;
     } else {
       switch (*data) {
@@ -320,9 +320,9 @@ static inline size_t skip_whitespace(char *data) {
 token_e token_next(char *data, int *len) {
   *len = 0;
   token_e token;
-  if (isalpha(*data)) {
+  if (isalpha((int)*data)) {
     token = tokenize_word(data, len);
-  } else if (isdigit(*data)) {
+  } else if (isdigit((int)*data)) {
     token = tokenize_number(data, len);
   } else {
     switch (*data) {
