@@ -18,9 +18,8 @@ jobs:
       - name: build
         uses: egor-tensin/setup-cygwin@v3
       - run: |
-          ls
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
-          ./nobuild -d
+          ./nobuild -r
   build-linux:
     runs-on: ubuntu-latest
     steps:
