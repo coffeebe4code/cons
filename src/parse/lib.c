@@ -78,16 +78,6 @@ token_e has_either_consume2(lex_source_t *lexer, token_e tok1, token_e tok2) {
   return Empty;
 }
 
-ast_t *parse_unary(lex_source_t *lexer, parser_source_t *parser) {
-  token_e tok = has_either_consume2(lexer, Not, Sub);
-  if (tok != Empty) {
-    ast_t *unary = parse_unary(lexer, parser);
-    ast_t ast = AST_Unary(tok, unary);
-    return parser_add_loose(parser, ast);
-  }
-  return NULL;
-}
-
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
   if (lex_peek(lexer).tok == Symbol) {
     lexeme_t val = lex_collect(lexer);
@@ -151,6 +141,16 @@ ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   return val;
 }
 
+ast_t *parse_unary(lex_source_t *lexer, parser_source_t *parser) {
+  token_e tok = has_either_consume2(lexer, Not, Sub);
+  if (tok != Empty) {
+    ast_t *unary = parse_unary(lexer, parser);
+    ast_t ast = AST_Unary(tok, unary);
+    return parser_add_loose(parser, ast);
+  }
+  return NULL;
+}
+
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *left = parse_terminal(lexer, parser);
   if (left != NULL) {
@@ -189,6 +189,38 @@ ast_t *parse_comp(lex_source_t *lexer, parser_source_t *parser) {
     while (is_comp(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
       ast_t *right = parse_low_bin(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      left = parser_add_loose(parser, combined);
+    }
+  }
+  return left;
+}
+
+ast_t *parse_and_log(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *left = parse_comp(lexer, parser);
+  if (left != NULL) {
+    while (lex_peek(lexer).tok == AndLog) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_comp(lexer, parser);
+      if (right == NULL) {
+        return right;
+      }
+      ast_t combined = AST_BinOp(left, tok, right);
+      left = parser_add_loose(parser, combined);
+    }
+  }
+  return left;
+}
+
+ast_t *parse_or_log(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *left = parse_and_log(lexer, parser);
+  if (left != NULL) {
+    while (lex_peek(lexer).tok == OrLog) {
+      token_e tok = lex_collect(lexer).tok;
+      ast_t *right = parse_and_log(lexer, parser);
       if (right == NULL) {
         return right;
       }

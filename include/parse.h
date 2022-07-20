@@ -20,6 +20,8 @@ typedef struct {
 
 parser_source_t parser_new();
 void parser_free(parser_source_t *parser);
+ast_t *parse_or_log(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_and_log(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_comp(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_low_bin(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser);
