@@ -1,22 +1,29 @@
 # cons
 
-## Installation
+For those who want to just GO, [Get Started Now](#get-started-now)
 
-- [Mac Installation](#mac_installation)
-- [Windows Installation](#windows_installation)
-- [Linux Installation](#linux_installation)
+# Introduction
 
-## Mac Installation
+## Get Started Now
 
-## Windows Installation
+## Build 
 
-## Linux Installation
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Get Started Now](#get-started-now)
+- [Building From Source](#building-from-source)
+  - [Mac Build](#mac-and-linux)
+  - [Windows Build](#windows-build)
+  - [Linux Build](#mac-and-linux)
+- [Contributing](#contributing)
+- [Where Are We](#where-are-we)
 
 ## Building From Source
 
-- [Mac Build](#mac_and_linux)
-- [Windows Build](#windows_build)
-- [Linux Build](#mac_and_linux)
+- [Mac Build](#mac-and-linux)
+- [Windows Build](#windows-build)
+- [Linux Build](#mac-and-linux)
 
 # Mac and Linux
 
@@ -52,3 +59,10 @@ We must set up the Mingw64 toolchain for building source as windows binaries.
 7. You may now run any `./nobuild` command, add `-s` to skip tests, and/or `-r` to build the release version. the release version is significantly faster than the debug version.
 8. The windows version of cons is completely self contained and does not need any dll's to run on a windows system, it does not need any fancy directory, just ensure to add any of the binaries you wish to the PATH System Environment variable.
   - if you used the default everything you would need to add `C:\\msys2\home\cons\target` to your PATH variable in your System Environment Variables.
+
+
+
+# Contributing
+
+
+# Where Are We
