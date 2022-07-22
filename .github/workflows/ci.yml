@@ -17,15 +17,23 @@ jobs:
         with:
           static: 1
       - run: |
-          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-win.c -o ./nobuild
           ./nobuild -r
-  build-linux:
+  build-linux-gcc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
+          ./nobuild -d
+  build-linux-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: build
+        run: |
+          clang -Wall -Werror -Wextra -pthread -O3 ./nobuild-clang.c -o ./nobuild
           ./nobuild -d
   build-macos:
     runs-on: macOS-latest
@@ -33,13 +41,5 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
-          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
+          gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
           ./nobuild -d
-  release-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - name: release
-        run: |
-          clang -Wall -Werror -Wextra -pthread -O3 ./nobuild.c -o ./nobuild
-          ./nobuild -r -s

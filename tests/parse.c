@@ -33,6 +33,9 @@ void test_terminal() {
   char *input = "7.0";
   lex_source_t lex = lex_new(input);
   MOCK(lex_peek, (lexeme_t){.tok = Dec});
+  MOCK(lex_peek, (lexeme_t){.tok = Dec});
+  MOCK(lex_peek, (lexeme_t){.tok = Dec});
+  MOCK(lex_peek, (lexeme_t){.tok = Dec});
   lexeme_t mocked_lex = (lexeme_t){.tok = Dec, .span = (span_t){.ptr = input}};
   MOCK(lex_collect, mocked_lex);
   MOCK(is_num, 1);
@@ -43,9 +46,12 @@ void test_terminal() {
   ASSERT(val->tok1.number == 7);
   parser_free(&parse);
 
+  reset();
   char *input2 = "my_symbol";
 
   lex_source_t lex2 = lex_new(input);
+  MOCK(lex_peek, (lexeme_t){.tok = Symbol});
+  MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   lexeme_t mocked_lex2 =
       (lexeme_t){.tok = Symbol, .span = (span_t){.ptr = input2, .len = 9}};
@@ -69,6 +75,9 @@ void test_returns() {
   MOCK(lex_peek, (lexeme_t){.tok = Num});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   lexeme_t mocked_lex =
       (lexeme_t){.tok = Return, .span = (span_t){.ptr = input}};
@@ -102,6 +111,9 @@ void test_reassign() {
   MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   MOCK(lex_peek, (lexeme_t){.tok = AddAs});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});

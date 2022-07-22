@@ -1,5 +1,4 @@
-#ifndef __LISTS__
-#define __LISTS__
+#pragma once
 #include "stdint.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -38,5 +37,3 @@
     return 0;                                                                  \
   }                                                                            \
   void name##_free(name##_l *list) { free(list->data); }
-
-#endif

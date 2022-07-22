@@ -361,12 +361,6 @@ int getopt_long(int argc, char *const argv[], const char *optstring,
 #ifndef PREFIX
 #define PREFIX "/usr/local"
 #endif
-#ifndef CFLAGS
-#define CFLAGS "-Wall", "-Werror", "-std=c11"
-#endif
-#ifndef CC
-#define CC "gcc"
-#endif
 #ifndef AR
 #define AR "ar"
 #endif

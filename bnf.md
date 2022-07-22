@@ -1,23 +1,9 @@
 #bnf
 
 ```
-NUMBER          => DIGIT+ ( "." DIGIT+ )? ;
 UTF8_STRING     => '"' < any CHAR except '"' | escaped char list except '\'' >* '"' ;
-IDENTIFIER      => < any ALPHA except "_" > ( ALPHA | DIGIT )* ;
-ALPHA           => "a" ... "z" | "A" ... "Z" | "_" ;
-DIGIT           => "0" ... "9" ;
 CHAR            => "'" <any character except "'" | escaped char list> "'" ;
-TERMINAL        => "true" | "false" | "this" | "null" | NUMBER | UTF8_STRING | IDENTIFIER ;
 VAL_TYPE        => <value types in ./include/token.h>
-```
-
-```
-or_log          => or_log ( "||" and_log )* ;
-and_log         => equality ( "&&" equality )* ;
-equality        => comp ( ( "!=" | "==" ) comp )* ;
-low_bin         => high_bin ( ( "-" | "+" | "%" ) high_bin )* ;
-high_bin        => unary ( ( "/" | "*" ) unary )* ;
-unary           => ( "!" | "-" ) unary | invoke ;
 ```
 
 ```
@@ -30,7 +16,7 @@ properties      => ("pub"? IDENTIFIER ":" (IDENTIFIER | VAL_TYPE) ";"?) properti
 
 root_assignment => "pub"? assignment ;
 function        => "pub"? IDENTIFIER "(" parameters? ")" (":" VAL_TYPE | IDENTIFIER )? block ;
-block           => "{" statement+ "}" ;
+block           => "{" statement* "}" ;
 
 
 ```
@@ -38,16 +24,20 @@ block           => "{" statement+ "}" ;
 implemented grammer  
 ```
 statement       => expression* | return ; 
-return          => "return" low_bin? ";"? ;
+return          => "return"? or_log? ";"? ;
 expression      => inner_asgnmt | reassignment; 
 
 inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) low_bin ";"? ;
 reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin ";"? ;
+or_log          => and_log ( "||" and_log )* ;
+and_log         => equality ( "&&" equality )* ;
+equality        => comp ( ( "!=" | "==" ) comp )* ;
 comp            => low_bin ( ( ">" | ">=" | "<" | "<=" ) low_bin )* ;
 low_bin         => high_bin ( ( "-" | "+") high_bin )* ;
-high_bin        => TERMINAL ( ( "/" | "*" | "%" ) TERMINAL )* ;
+high_bin        => unary ( ( "/" | "*" | "%" ) unary )* ;
+unary           => ( "!" | "-" ) unary;
 
-TERMINAL        => NUMBER | IDENTIFIER ;
+TERMINAL        => "true" | "false" | "null" | NUMBER | IDENTIFIER ;
 NUMBER          => DIGIT+ ( "." DIGIT+ )? ;
 IDENTIFIER      => < any ALPHA except "_" > ( ALPHA | DIGIT )* ;
 ```

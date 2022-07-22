@@ -3,12 +3,12 @@
 - implement RAII
 - implement at least one optimization
 
-## TODO 07-04-2022
-- implement results or matches.
+## TODO 07-22-2022
+- comp, assignment, reassignment, or_log, and_log IR and VM.
 
 ## TODO 07-03-2022
-- add more parsing logic
-- dynamic typing or provide compile time types better
+- implement results or matches.
+- dynamic typing or provide compile time types better or routes (pre): $-1
 - focus on math operations correctness (pre): $-1
 
 ## TODO 07-01-2022

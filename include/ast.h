@@ -10,7 +10,8 @@ typedef enum expr_e {
   Number,
   Identifier,
   BinOp,
-  UnOp
+  UnOp,
+  Single,
 } expr_e;
 
 // RetFn 2 .ret _blank _blank .semi
@@ -19,7 +20,8 @@ typedef enum expr_e {
 // Number 2 .number .type
 // Identifier 2 .ident .ident_hash
 // BinOp 3 .bin_left_expr .bin_op .bin_right_expr
-// UnOp 1 .unary_op
+// UnOp 2 .unary_op .unary_expr
+// Single 1 .single_op
 
 typedef struct ast_t {
   expr_e expr_kind;
@@ -31,6 +33,7 @@ typedef struct ast_t {
     struct ast_t *bin_left_expr;
     struct ast_t *ret;
     token_e unary_op;
+    token_e single_op;
   } tok1;
   union {
     token_e bin_op;
@@ -50,6 +53,12 @@ typedef struct ast_t {
 
 #define AST_Num(val)                                                           \
   (ast_t) { .expr_kind = Number, .tok1.number = val }
+
+#define AST_Single(val)                                                        \
+  (ast_t) { .expr_kind = Single, .tok1.single_op = val }
+
+#define AST_Unary(op, val)                                                     \
+  (ast_t) { .expr_kind = UnOp, .tok1.unary_op = op, .tok2.unary_expr = val }
 
 #define AST_Identifer(val, hash)                                               \
   (ast_t) {                                                                    \
