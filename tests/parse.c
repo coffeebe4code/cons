@@ -76,6 +76,9 @@ void test_returns() {
   MOCK(lex_peek, (lexeme_t){.tok = Num});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   lexeme_t mocked_lex =
       (lexeme_t){.tok = Return, .span = (span_t){.ptr = input}};
   MOCK(lex_collect, mocked_lex);
@@ -108,6 +111,9 @@ void test_reassign() {
   MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   MOCK(lex_peek, (lexeme_t){.tok = AddAs});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
