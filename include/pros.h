@@ -9,6 +9,7 @@ typedef enum {
   RetBlock,
   RetBlockVoid,
   FirstBlock,
+  TopBlock,
   LeafBlock,
 } block_e;
 
@@ -135,13 +136,15 @@ typedef struct {
 } instr_t;
 
 LIST_DECL(instr_t, instrs);
+LIST_DECL(size_t, preds);
+LIST_DECL(size_t, succs);
 
 typedef struct {
-  size_t *preds;
-  size_t *succs;
+  preds_l preds;
+  succs_l succs;
   size_t hash;
   size_t block_id;
-  char **label;
+  char *label;
   instrs_l instructions;
   block_e kind;
 } block_t;

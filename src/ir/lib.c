@@ -1,12 +1,15 @@
 #include "../../include/gen.h"
+#include "../../include/hash.h"
 #include "../../include/ir.h"
 #include "../../include/list.h"
 #include "../../include/pros.h"
 #include "string.h"
 #include <stdint.h>
 
-LIST_USE(block_t, blocks, 1);
-LIST_USE(instr_t, instrs, 1);
+LIST_USE(instr_t, instrs, 10);
+LIST_USE(block_t, blocks, 10);
+LIST_USE(size_t, succs, 10);
+LIST_USE(size_t, preds, 10);
 
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
@@ -24,9 +27,9 @@ void insert_instr(ir_source_t *ir, instr_t instr, size_t block_id) {
   instrs_add(&ir->blocks.data[block_id].instructions, instr);
 }
 
-void new_block(ir_source_t *ir, size_t hash, char **label, size_t block_id) {
-  block_t new = (block_t){.preds = NULL,
-                          .succs = NULL,
+void new_block(ir_source_t *ir, size_t hash, char *label, size_t block_id) {
+  block_t new = (block_t){.preds = preds_new(),
+                          .succs = succs_new(),
                           .label = label,
                           .block_id = block_id,
                           .hash = hash,
@@ -63,9 +66,12 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
   return val;
 }
 
-ir_source_t ir_new(size_t hash, char **block_name) {
-  ir_source_t val = {
-      .blocks = blocks_new(), .block_id = -1, .reg_id = 0, .gen = gen_new()};
+ir_source_t ir_new(size_t hash, char *block_name) {
+  ir_source_t val = {.main_exit = -1,
+                     .blocks = blocks_new(),
+                     .block_id = -1,
+                     .reg_id = 1,
+                     .gen = gen_new()};
   if (val.blocks.data == NULL) {
     ir_exit();
   }
@@ -76,6 +82,17 @@ ir_source_t ir_new(size_t hash, char **block_name) {
 size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   size_t result = 0;
   switch (recurse->expr_kind) {
+  case RetFn: {
+    if (recurse->tok1.ret == NULL) {
+      result = ir_retvoid(ir);
+      ir->blocks.data[ir->block_id].kind = RetBlockVoid;
+    } else {
+      size_t value = ir_recurse(ir, recurse->tok1.ret);
+      result = ir_ret(ir, value);
+      ir->blocks.data[ir->block_id].kind = RetBlock;
+    }
+    break;
+  }
   case Number: {
     result = ir_constf64(ir, recurse->tok1.number);
     break;
@@ -143,7 +160,20 @@ void ir_flush_gen(ir_source_t *ir) {
   }
 }
 
-void ir_begin(ir_source_t *ir, ast_t *main) {
+void ir_begin(ir_source_t *ir, ast_t **top, size_t top_len) {
+  size_t recurse_ret = 0;
+  for (size_t i = 0; i < top_len; i++) {
+    recurse_ret = ir_recurse(ir, top[i]);
+    if (recurse_ret == 0 &&
+        ir->blocks.data[ir->block_id].kind != RetBlockVoid) {
+      // post or preprocessor task to complete
+      puts("post/pre processor task to complete");
+      puts("not possible in cons yet");
+    }
+  }
+}
+
+void ir_main(ir_source_t *ir, ast_t *main) {
   ir->main_exit = ir_recurse(ir, main);
 }
 
@@ -164,6 +194,12 @@ size_t ir_ret(ir_source_t *source, size_t val) {
   instr_t instr = make_instr(Ret, val, 0, 0);
   insert_instr(source, instr, source->block_id);
   return instr.dst;
+}
+
+size_t ir_retvoid(ir_source_t *source) {
+  instr_t instr = make_instr(RetVoid, 0, 0, 0);
+  insert_instr(source, instr, source->block_id);
+  return 0;
 }
 
 size_t ir_mulf64(ir_source_t *source, size_t left, size_t right) {
@@ -190,9 +226,24 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
   return instr.dst;
 }
 
+size_t ir_get_block_id(ir_source_t *ir, char *block_name) {
+  size_t block_hash = hash((const char *)block_name);
+  size_t block_id = -1;
+  for (size_t i = 0; i < ir->blocks.len; i++) {
+    if (hash((const char *)ir->blocks.data[i].label) == block_hash) {
+      if (strcmp(block_name, ir->blocks.data[i].label) == 0) {
+        block_id = ir->blocks.data[i].block_id;
+      }
+    }
+  }
+  return block_id;
+}
+
 void ir_free(ir_source_t *source) {
   for (size_t i = 0; i < source->blocks.len; i++) {
     instrs_free(&source->blocks.data[i].instructions);
+    succs_free(&source->blocks.data[i].succs);
+    preds_free(&source->blocks.data[i].preds);
   }
   gen_free(&source->gen);
   blocks_free(&source->blocks);
