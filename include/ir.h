@@ -16,15 +16,15 @@ typedef struct {
 ir_source_t ir_new();
 void ir_begin(ir_source_t *source, ast_t **tops, size_t tops_len);
 void ir_main(ir_source_t *source, ast_t *main);
-void ir_add_top(ir_source_t *source, ast_t *top);
 void ir_flush_gen(ir_source_t *ir);
-void ir_rebuild_block(ir_source_t *ir, ast_t **lines, size_t block_id);
 size_t ir_get_block_id(ir_source_t *ir, char *block_name);
 void ir_clean(ir_source_t *source);
 void ir_free(ir_source_t *source);
 byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr);
 
 size_t ir_constf64(ir_source_t *source, byte8_t left);
+size_t ir_assign(ir_source_t *source, byte8_t left);
+size_t ir_reassign(ir_source_t *source, byte8_t left);
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_mulf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_divf64(ir_source_t *source, size_t left, size_t right);

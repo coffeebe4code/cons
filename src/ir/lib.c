@@ -8,8 +8,8 @@
 
 LIST_USE(instr_t, instrs, 10);
 LIST_USE(block_t, blocks, 10);
-LIST_USE(size_t, succs, 10);
-LIST_USE(size_t, preds, 10);
+LIST_USE(size_t, succs, 1);
+LIST_USE(size_t, preds, 1);
 
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
@@ -149,6 +149,11 @@ void ir_flush_gen(ir_source_t *ir) {
         gen_add32(&ir->gen, val);
         break;
       }
+      case RetVoid: {
+        byte4_t val = make_gen_instr(RetVoid, 0, 0, 0);
+        gen_add32(&ir->gen, val);
+        break;
+      }
       default: {
         byte4_t val = make_gen_instr(local_instr.op, local_instr.dst,
                                      local_instr.pt1.lft, local_instr.pt2.rgt);
@@ -229,7 +234,7 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
 size_t ir_get_block_id(ir_source_t *ir, char *block_name) {
   size_t block_hash = hash((const char *)block_name);
   size_t block_id = -1;
-  for (size_t i = 0; i < ir->blocks.len; i++) {
+  for (size_t i = ir->blocks.len - 1; i > -1; i--) {
     if (hash((const char *)ir->blocks.data[i].label) == block_hash) {
       if (strcmp(block_name, ir->blocks.data[i].label) == 0) {
         block_id = ir->blocks.data[i].block_id;
