@@ -82,6 +82,11 @@ ir_source_t ir_new(size_t hash, char *block_name) {
 size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   size_t result = 0;
   switch (recurse->expr_kind) {
+  case Assign: {
+    result = ir_recurse(ir, recurse->tok3.assignment);
+
+    break;
+  }
   case RetFn: {
     if (recurse->tok1.ret == NULL) {
       result = ir_retvoid(ir);
@@ -234,7 +239,7 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
 size_t ir_get_block_id(ir_source_t *ir, char *block_name) {
   size_t block_hash = hash((const char *)block_name);
   size_t block_id = -1;
-  for (size_t i = ir->blocks.len - 1; i > -1; i--) {
+  for (size_t i = ir->blocks.len - 1; i >= 0; i--) {
     if (hash((const char *)ir->blocks.data[i].label) == block_hash) {
       if (strcmp(block_name, ir->blocks.data[i].label) == 0) {
         block_id = ir->blocks.data[i].block_id;
