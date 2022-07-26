@@ -38,8 +38,6 @@ void test_vars() {
   ast_t asts = AST_BinOp(&left, Plus, &right);
   ast_t assign = AST_Assign(&ident, 1, &asts, 1);
   ir_main(&source, &assign);
-  INFO("reg_id %lu: instructions %lu, exit %lu", source.reg_id,
-       source.blocks.data[0].instructions.len, source.main_exit);
   ASSERT(source.block_id == 0);
   ASSERT(source.reg_id == 4);
   ASSERT(source.blocks.data[0].instructions.len == 3);
