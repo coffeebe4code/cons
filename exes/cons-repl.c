@@ -38,8 +38,8 @@ int main(int argc __attribute__((unused)),
       lex_source = lex_new(input);
       parse_source = parser_new();
       ir_source = ir_new();
-      ast_t *new_ast = parse_low_bin(&lex_source, &parse_source);
-      ir_begin(&ir_source, new_ast);
+      ast_t *new_ast = parse_expr(&lex_source, &parse_source);
+      ir_main(&ir_source, new_ast);
 
       ir_flush_gen(&ir_source);
       gen_add32(&ir_source.gen, make_gen_instr(Ret, ir_source.main_exit, 0, 0));

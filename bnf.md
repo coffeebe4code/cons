@@ -1,34 +1,19 @@
 #bnf
 
+working on
 ```
-UTF8_STRING     => '"' < any CHAR except '"' | escaped char list except '\'' >* '"' ;
-CHAR            => "'" <any character except "'" | escaped char list> "'" ;
-VAL_TYPE        => <value types in ./include/token.h>
+statement       => expression* | return ; // problem with implementing (call)
 ```
+// return keyword is optional, which means the last expression could be a return, it could also be a call, and the result of that call is the return.
+// ie func whatever(): num { getFive() }
 
+implemented grammar 
 ```
-declaration     => type_decl | const_decl | mut_decl ;
-type_decl       => "pub"? "type" IDENTIFIER body_decl ;
-const_decl      => "pub"? "const" assignment ;
-mut_decl        => "pub"? "mut" assignment ;
-body_decl       => "{" properties+ "}" ";"? ;
-properties      => ("pub"? IDENTIFIER ":" (IDENTIFIER | VAL_TYPE) ";"?) properties;
-
-root_assignment => "pub"? assignment ;
-function        => "pub"? IDENTIFIER "(" parameters? ")" (":" VAL_TYPE | IDENTIFIER )? block ;
-block           => "{" statement* "}" ;
-
-
-```
-
-implemented grammer  
-```
-statement       => expression* | return ; 
 return          => "return"? or_log? ";"? ;
-expression      => inner_asgnmt | reassignment; 
+expression      => inner_asgnmt | reassignment | or_log; 
 
-inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) low_bin ";"? ;
-reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) low_bin ";"? ;
+inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) or_log ";"? ;
+reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) or_log ";"? ; // best place to do (call)
 or_log          => and_log ( "||" and_log )* ;
 and_log         => equality ( "&&" equality )* ;
 equality        => comp ( ( "!=" | "==" ) comp )* ;

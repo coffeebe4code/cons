@@ -14,6 +14,7 @@ typedef enum expr_e {
   Single,
 } expr_e;
 
+// Expr 2 .expr .type
 // RetFn 2 .ret _blank _blank .semi
 // Assign 4 .ident_ptr .type .assignment .semi
 // Reassign 4 .ident_ptr .as_op .assignment .semi
@@ -31,6 +32,7 @@ typedef struct ast_t {
     struct ast_t *symbol;
     char *ident;
     struct ast_t *bin_left_expr;
+    struct ast_t *expr;
     struct ast_t *ret;
     token_e unary_op;
     token_e single_op;
@@ -74,9 +76,12 @@ typedef struct ast_t {
 #define AST_Return(value, has_semi)                                            \
   (ast_t) { .expr_kind = RetFn, .tok1.ret = value, .tok4.semi = has_semi }
 
+#define AST_Expr(value, token)                                                 \
+  (ast_t) { .expr_kind = Expr, .tok1.expr = value, .tok2.type = token }
+
 #define AST_Assign(ident, mutability, asgn, has_semi)                          \
   (ast_t) {                                                                    \
-    .expr_kind = Reassign, .tok1.ident_ptr = ident, .tok2.type = mutability,   \
+    .expr_kind = Assign, .tok1.ident_ptr = ident, .tok2.type = mutability,     \
     .tok3.assignment = asgn, .tok4.semi = has_semi                             \
   }
 
