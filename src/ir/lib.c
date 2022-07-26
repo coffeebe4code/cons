@@ -4,12 +4,14 @@
 #include "../../include/list.h"
 #include "../../include/pros.h"
 #include "string.h"
-#include <stdint.h>
 
-LIST_USE(instr_t, instrs, 10);
-LIST_USE(block_t, blocks, 10);
+LIST_USE(instr_t, instrs, 1);
+LIST_USE(block_t, blocks, 1);
 LIST_USE(size_t, succs, 1);
 LIST_USE(size_t, preds, 1);
+LIST_USE(var_t, vars, 1);
+LIST_USE(size_t, linears, 1);
+LIST_USE(size_t, versions, 1);
 
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
@@ -27,14 +29,36 @@ void insert_instr(ir_source_t *ir, instr_t instr, size_t block_id) {
   instrs_add(&ir->blocks.data[block_id].instructions, instr);
 }
 
+void insert_var(ir_source_t *ir, size_t block_id, char *var_name, size_t hash,
+                size_t reg_id) {
+  var_t var = (var_t){.raw = var_name,
+                      .hashed = hash,
+                      .linears = linears_new(),
+                      .versions = versions_new()};
+  if (var.linears.data == NULL || var.versions.data == NULL) {
+    ir_exit();
+  }
+  int linear_add = linears_add(&var.linears, reg_id);
+  int version_add = versions_add(&var.versions, (size_t)0);
+  if (vars_add(&ir->blocks.data[block_id].vars, var) || linear_add ||
+      version_add) {
+    ir_exit();
+  }
+}
+
 void new_block(ir_source_t *ir, size_t hash, char *label, size_t block_id) {
-  block_t new = (block_t){.preds = preds_new(),
+  block_t new = (block_t){.vars = vars_new(),
+                          .preds = preds_new(),
                           .succs = succs_new(),
                           .label = label,
                           .block_id = block_id,
                           .hash = hash,
                           .instructions = instrs_new(),
                           .kind = PlainBlock};
+  if (new.instructions.data == NULL || new.preds.data == NULL ||
+      new.succs.data == NULL || new.vars.data == NULL) {
+    ir_exit();
+  }
   if (blocks_add(&ir->blocks, new)) {
     ir_exit();
   }
@@ -67,7 +91,7 @@ byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr) {
 }
 
 ir_source_t ir_new(size_t hash, char *block_name) {
-  ir_source_t val = {.main_exit = -1,
+  ir_source_t val = {.main_exit = SIZE_MAX,
                      .blocks = blocks_new(),
                      .block_id = -1,
                      .reg_id = 1,
@@ -76,6 +100,7 @@ ir_source_t ir_new(size_t hash, char *block_name) {
     ir_exit();
   }
   new_block(&val, hash, block_name, ++val.block_id);
+  val.blocks.data[val.block_id].kind = TopBlock;
   return val;
 }
 
@@ -239,12 +264,16 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
 size_t ir_get_block_id(ir_source_t *ir, char *block_name) {
   size_t block_hash = hash((const char *)block_name);
   size_t block_id = -1;
-  for (size_t i = ir->blocks.len - 1; i >= 0; i--) {
+  int cont = 1;
+  size_t i = ir->blocks.len - 1;
+  while (cont) {
     if (hash((const char *)ir->blocks.data[i].label) == block_hash) {
       if (strcmp(block_name, ir->blocks.data[i].label) == 0) {
         block_id = ir->blocks.data[i].block_id;
+        cont = 0;
       }
     }
+    i--;
   }
   return block_id;
 }
@@ -254,6 +283,11 @@ void ir_free(ir_source_t *source) {
     instrs_free(&source->blocks.data[i].instructions);
     succs_free(&source->blocks.data[i].succs);
     preds_free(&source->blocks.data[i].preds);
+    for (size_t j = 0; j < source->blocks.data[i].vars.len; j++) {
+      linears_free(&source->blocks.data[i].vars.data[j].linears);
+      versions_free(&source->blocks.data[i].vars.data[j].versions);
+    }
+    vars_free(&source->blocks.data[i].vars);
   }
   gen_free(&source->gen);
   blocks_free(&source->blocks);

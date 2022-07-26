@@ -23,6 +23,8 @@ void ir_free(ir_source_t *source);
 byte4_t make_gen_instr(op_e op, byte_t dst, byte_t srcl, byte_t srcr);
 
 size_t ir_constf64(ir_source_t *source, byte8_t left);
+size_t ir_load(ir_source_t *source, size_t var);
+size_t ir_store(ir_source_t *source, size_t var);
 size_t ir_assign(ir_source_t *source, byte8_t left);
 size_t ir_reassign(ir_source_t *source, byte8_t left);
 size_t ir_addf64(ir_source_t *source, size_t left, size_t right);
