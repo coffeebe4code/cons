@@ -11,7 +11,6 @@ LIST_USE(size_t, succs, 1);
 LIST_USE(size_t, preds, 1);
 LIST_USE(var_t, vars, 1);
 LIST_USE(size_t, linears, 1);
-LIST_USE(size_t, versions, 1);
 
 void ir_exit() {
   puts("[ERROR] | failure to allocate enough memory");
@@ -31,19 +30,32 @@ void insert_instr(ir_source_t *ir, instr_t instr, size_t block_id) {
 
 void insert_var(ir_source_t *ir, size_t block_id, char *var_name, size_t hash,
                 size_t reg_id) {
-  var_t var = (var_t){.raw = var_name,
-                      .hashed = hash,
-                      .linears = linears_new(),
-                      .versions = versions_new()};
-  if (var.linears.data == NULL || var.versions.data == NULL) {
+  var_t var =
+      (var_t){.raw = var_name, .hashed = hash, .linears = linears_new()};
+  if (var.linears.data == NULL) {
     ir_exit();
   }
   int linear_add = linears_add(&var.linears, reg_id);
-  int version_add = versions_add(&var.versions, (size_t)0);
-  if (vars_add(&ir->blocks.data[block_id].vars, var) || linear_add ||
-      version_add) {
+  if (vars_add(&ir->blocks.data[block_id].vars, var) || linear_add) {
     ir_exit();
   }
+}
+
+void var_version(var_t *var, size_t reg_id) {
+  linears_add(&var->linears, reg_id);
+}
+
+int search_var(ir_source_t *ir, size_t hash, char *name, size_t block_id) {
+  int result = -1;
+  vars_l local_vars = ir->blocks.data[block_id].vars;
+  for (size_t i = 0; i < local_vars.len; i++) {
+    if (local_vars.data[i].hashed == hash) {
+      if (strcmp(name, local_vars.data[i].raw) == 0) {
+        result = i;
+      }
+    }
+  }
+  return result;
 }
 
 void new_block(ir_source_t *ir, size_t hash, char *label, size_t block_id) {
@@ -107,9 +119,26 @@ ir_source_t ir_new(size_t hash, char *block_name) {
 size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   size_t result = 0;
   switch (recurse->expr_kind) {
+  case Expr: {
+    result = ir_recurse(ir, recurse->tok1.expr);
+    return result;
+    break;
+  }
   case Assign: {
     result = ir_recurse(ir, recurse->tok3.assignment);
-
+    insert_var(ir, ir->block_id, recurse->tok1.ident_ptr->tok1.ident,
+               recurse->tok1.ident_ptr->tok2.ident_hash, result);
+    return result;
+    break;
+  }
+  case Reassign: {
+    result = ir_recurse(ir, recurse->tok3.assignment);
+    int var_idx = search_var(ir, recurse->tok1.ident_ptr->tok2.ident_hash,
+                             recurse->tok1.ident_ptr->tok1.ident, ir->block_id);
+    if (var_idx != -1) {
+      var_version(&ir->blocks.data[ir->block_id].vars.data[var_idx], result);
+    }
+    return result;
     break;
   }
   case RetFn: {
@@ -262,12 +291,12 @@ size_t ir_modf64(ir_source_t *source, size_t left, size_t right) {
 }
 
 size_t ir_get_block_id(ir_source_t *ir, char *block_name) {
-  size_t block_hash = hash((const char *)block_name);
+  size_t block_hash = hash_it((const char *)block_name);
   size_t block_id = -1;
   int cont = 1;
   size_t i = ir->blocks.len - 1;
   while (cont) {
-    if (hash((const char *)ir->blocks.data[i].label) == block_hash) {
+    if (hash_it((const char *)ir->blocks.data[i].label) == block_hash) {
       if (strcmp(block_name, ir->blocks.data[i].label) == 0) {
         block_id = ir->blocks.data[i].block_id;
         cont = 0;
@@ -285,7 +314,6 @@ void ir_free(ir_source_t *source) {
     preds_free(&source->blocks.data[i].preds);
     for (size_t j = 0; j < source->blocks.data[i].vars.len; j++) {
       linears_free(&source->blocks.data[i].vars.data[j].linears);
-      versions_free(&source->blocks.data[i].vars.data[j].versions);
     }
     vars_free(&source->blocks.data[i].vars);
   }

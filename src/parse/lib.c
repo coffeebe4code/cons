@@ -83,8 +83,8 @@ ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser) {
     lexeme_t val = lex_collect(lexer);
     char *symbol = calloc(val.span.len + 1, sizeof(char));
     memcpy(symbol, val.span.ptr, val.span.len);
-    size_t hashval = hash(symbol);
-    ast_t ast = AST_Identifer(symbol, hashval);
+    size_t hash = hash_it(symbol);
+    ast_t ast = AST_Identifer(symbol, hash);
     return parser_add_loose(parser, ast);
   }
   return NULL;
@@ -238,10 +238,10 @@ ast_t *parse_inner_assign(lex_source_t *lexer, parser_source_t *parser) {
     ident = parse_ident(lexer, parser);
     if (ident != NULL) {
       if (has_token_consume(lexer, As)) {
-        ast_t *low = parse_low_bin(lexer, parser);
-        if (low != NULL) {
+        ast_t *or_log = parse_or_log(lexer, parser);
+        if (or_log != NULL) {
           int has_semi = has_token_consume(lexer, SColon);
-          ast_t combined = AST_Assign(ident, has_token, low, has_semi);
+          ast_t combined = AST_Assign(ident, has_token, or_log, has_semi);
           ident = parser_add_loose(parser, combined);
         }
       }
@@ -255,10 +255,11 @@ ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
   if (ident != NULL) {
     if (is_reassign(lex_peek(lexer).tok)) {
       token_e tok = lex_collect(lexer).tok;
-      ast_t *comp = parse_comp(lexer, parser);
-      if (comp != NULL) {
+      ast_t *or_log = parse_or_log(lexer, parser);
+      if (or_log != NULL) {
+
         int has_semi = has_token_consume(lexer, SColon);
-        ast_t combined = AST_Reassign(ident, tok, comp, has_semi);
+        ast_t combined = AST_Reassign(ident, tok, or_log, has_semi);
         ident = parser_add_loose(parser, combined);
       }
     }
@@ -279,8 +280,24 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
 
 ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *inner_asgnmt = parse_inner_assign(lexer, parser);
-  if (inner_asgnmt == NULL) {
+  if (inner_asgnmt != NULL) {
+    // inner_asgnmt found
+    ast_t combined = AST_Expr(inner_asgnmt, As);
+    inner_asgnmt = parser_add_serial(parser, combined);
+  } else {
     inner_asgnmt = parse_reassign(lexer, parser);
+    if (inner_asgnmt != NULL) {
+      // reassignment found
+      ast_t combined = AST_Expr(inner_asgnmt, inner_asgnmt->tok2.as_op);
+      inner_asgnmt = parser_add_serial(parser, combined);
+    } else {
+      inner_asgnmt = parse_or_log(lexer, parser);
+      if (inner_asgnmt != NULL) {
+        // or_log found
+        ast_t combined = AST_Expr(inner_asgnmt, OrLog);
+        inner_asgnmt = parser_add_serial(parser, combined);
+      }
+    }
   }
   return inner_asgnmt;
 }

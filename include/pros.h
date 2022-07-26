@@ -123,13 +123,11 @@ typedef enum {
 } op_e;
 
 LIST_DECL(size_t, linears);
-LIST_DECL(size_t, versions);
 
 typedef struct {
   char *raw;
   size_t hashed;
   linears_l linears;
-  versions_l versions;
 } var_t;
 
 LIST_DECL(var_t, vars);

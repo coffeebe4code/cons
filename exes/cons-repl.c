@@ -38,7 +38,7 @@ int main(int argc __attribute__((unused)),
       lex_source = lex_new(input);
       parse_source = parser_new();
       ir_source = ir_new();
-      ast_t *new_ast = parse_or_log(&lex_source, &parse_source);
+      ast_t *new_ast = parse_expr(&lex_source, &parse_source);
       ir_main(&ir_source, new_ast);
 
       ir_flush_gen(&ir_source);
