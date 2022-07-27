@@ -3,6 +3,7 @@
 #include "lexeme.h"
 
 typedef enum expr_e {
+  Body,
   Expr,
   RetFn,
   Assign,
@@ -14,6 +15,7 @@ typedef enum expr_e {
   Single,
 } expr_e;
 
+// Body 4 .args .exprs .args_len .expr_len
 // Expr 2 .expr .type
 // RetFn 2 .ret _blank _blank .semi
 // Assign 4 .ident_ptr .type .assignment .semi
@@ -29,6 +31,7 @@ typedef struct ast_t {
   union {
     byte8_t number;
     struct ast_t *ident_ptr;
+    struct ast_t *args;
     struct ast_t *symbol;
     char *ident;
     struct ast_t *bin_left_expr;
@@ -41,14 +44,17 @@ typedef struct ast_t {
     token_e bin_op;
     token_e as_op;
     token_e type;
+    struct ast_t *exprs;
     size_t ident_hash;
     struct ast_t *unary_expr;
   } tok2;
   union {
+    size_t args_len;
     struct ast_t *bin_right_expr;
     struct ast_t *assignment;
   } tok3;
   union {
+    size_t expr_len;
     int semi;
   } tok4;
 } ast_t;
@@ -78,6 +84,12 @@ typedef struct ast_t {
 
 #define AST_Expr(value, token)                                                 \
   (ast_t) { .expr_kind = Expr, .tok1.expr = value, .tok2.type = token }
+
+#define AST_Body(arguments, expressions, arg_length, expr_length)              \
+  (ast_t) {                                                                    \
+    .expr_kind = Body, .tok1.args = arguments, .tok2.exprs = expressions,      \
+    .tok3.args_len = arg_length, .tok4.expr_len = expr_length                  \
+  }
 
 #define AST_Assign(ident, mutability, asgn, has_semi)                          \
   (ast_t) {                                                                    \

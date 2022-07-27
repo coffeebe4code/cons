@@ -20,8 +20,8 @@ typedef struct {
 
 parser_source_t parser_new();
 void parser_free(parser_source_t *parser);
-void parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
-                int *end);
+ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
+                  int *end);
 ast_t *parse_statement(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser);

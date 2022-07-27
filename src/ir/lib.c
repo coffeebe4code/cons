@@ -119,29 +119,49 @@ ir_source_t ir_new(size_t hash, char *block_name) {
 size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   size_t result = 0;
   switch (recurse->expr_kind) {
+  case Body: {
+    puts("body");
+    for (size_t i = 0; i < recurse->tok4.expr_len; i++) {
+      result = ir_recurse(ir, &recurse->tok2.exprs[i]);
+    }
+    break;
+  }
   case Expr: {
+    puts("expr");
+    printf("expr %d\n", recurse->tok1.expr->expr_kind);
     result = ir_recurse(ir, recurse->tok1.expr);
-    return result;
     break;
   }
   case Assign: {
+    puts("assign");
     result = ir_recurse(ir, recurse->tok3.assignment);
     insert_var(ir, ir->block_id, recurse->tok1.ident_ptr->tok1.ident,
                recurse->tok1.ident_ptr->tok2.ident_hash, result);
-    return result;
+    break;
+  }
+  case Identifier: {
+    puts("Identifier");
+    int var_idx = search_var(ir, recurse->tok2.ident_hash, recurse->tok1.ident,
+                             ir->block_id);
+    puts("search");
+    if (var_idx != -1) {
+      var_t *var = &ir->blocks.data[ir->block_id].vars.data[var_idx];
+      result = var->linears.data[var->linears.len - 1];
+    }
     break;
   }
   case Reassign: {
+    puts("reassign");
     result = ir_recurse(ir, recurse->tok3.assignment);
     int var_idx = search_var(ir, recurse->tok1.ident_ptr->tok2.ident_hash,
                              recurse->tok1.ident_ptr->tok1.ident, ir->block_id);
     if (var_idx != -1) {
       var_version(&ir->blocks.data[ir->block_id].vars.data[var_idx], result);
     }
-    return result;
     break;
   }
   case RetFn: {
+    puts("retfn");
     if (recurse->tok1.ret == NULL) {
       result = ir_retvoid(ir);
       ir->blocks.data[ir->block_id].kind = RetBlockVoid;
@@ -153,10 +173,12 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     break;
   }
   case Number: {
+    puts("number");
     result = ir_constf64(ir, recurse->tok1.number);
     break;
   }
   case BinOp: {
+    puts("binop");
     size_t left = ir_recurse(ir, recurse->tok1.bin_left_expr);
     size_t right = ir_recurse(ir, recurse->tok3.bin_right_expr);
     switch (recurse->tok2.bin_op) {
@@ -190,6 +212,7 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     break;
   }
   }
+  printf("result %lu\n", result);
   return result;
 }
 
@@ -199,21 +222,26 @@ void ir_flush_gen(ir_source_t *ir) {
       instr_t local_instr = ir->blocks.data[i].instructions.data[j];
       switch (local_instr.op) {
       case f64Const: {
+        puts("const");
         make_data_gen_instr(&ir->gen, local_instr.op, local_instr.dst,
                             local_instr.pt1.raw_data);
         break;
       }
       case Ret: {
+        puts("ret");
+
         byte4_t val = make_gen_instr(Ret, local_instr.dst, 0, 0);
         gen_add32(&ir->gen, val);
         break;
       }
       case RetVoid: {
+        puts("retvoid");
         byte4_t val = make_gen_instr(RetVoid, 0, 0, 0);
         gen_add32(&ir->gen, val);
         break;
       }
       default: {
+        puts("regular");
         byte4_t val = make_gen_instr(local_instr.op, local_instr.dst,
                                      local_instr.pt1.lft, local_instr.pt2.rgt);
         gen_add32(&ir->gen, val);

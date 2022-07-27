@@ -312,14 +312,14 @@ ast_t *parse_statement(lex_source_t *lexer, parser_source_t *parser) {
   return expr;
 }
 
-void parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
-                int *end) {
-  int start_len = parser->len;
+ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
+                  int *end) {
+  int start_idx = parser->len;
   int end_idx = parser->len;
   if (!has_token_consume(lexer, OBrace)) {
     *start = -1;
     *end = -1;
-    return;
+    return NULL;
   }
 
   ast_t *statement = parse_statement(lexer, parser);
@@ -330,12 +330,17 @@ void parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   }
 
   if (!has_token_consume(lexer, CBrace)) {
-    *start = start_len;
+    *start = start_idx;
     *end = -1;
-    return;
+    return NULL;
   }
-  *start = start_len;
+  ast_t body =
+      AST_Body(NULL, parser->asts[start_idx], 0, (end_idx - start_idx));
+  statement = parser_add_loose(parser, body);
+  *start = start_idx;
   *end = end_idx;
+  printf("start_idx %d end_idx %d\n", start_idx, end_idx);
+  return statement;
 }
 
 void parser_free(parser_source_t *parser) {
