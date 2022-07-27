@@ -147,6 +147,7 @@ ast_t *parse_unary(lex_source_t *lexer, parser_source_t *parser) {
     ast_t *unary = parse_unary(lexer, parser);
     ast_t ast = AST_Unary(tok, unary);
     return parser_add_loose(parser, ast);
+  } else {
   }
   return NULL;
 }
@@ -273,7 +274,7 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
     comp = parse_comp(lexer, parser);
     int has_semi = has_token_consume(lexer, SColon);
     ast_t combined = AST_Return(comp, has_semi);
-    comp = parser_add_loose(parser, combined);
+    comp = parser_add_serial(parser, combined);
   }
   return comp;
 }
@@ -300,6 +301,41 @@ ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
     }
   }
   return inner_asgnmt;
+}
+
+ast_t *parse_statement(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *expr = parse_expr(lexer, parser);
+  if (expr != NULL) {
+    return expr;
+  }
+  expr = parse_return(lexer, parser);
+  return expr;
+}
+
+void parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
+                int *end) {
+  int start_len = parser->len;
+  int end_idx = parser->len;
+  if (!has_token_consume(lexer, OBrace)) {
+    *start = -1;
+    *end = -1;
+    return;
+  }
+
+  ast_t *statement = parse_statement(lexer, parser);
+
+  while (statement != NULL) {
+    end_idx++;
+    statement = parse_statement(lexer, parser);
+  }
+
+  if (!has_token_consume(lexer, CBrace)) {
+    *start = start_len;
+    *end = -1;
+    return;
+  }
+  *start = start_len;
+  *end = end_idx;
 }
 
 void parser_free(parser_source_t *parser) {

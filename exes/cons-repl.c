@@ -13,7 +13,7 @@
 #include "stdlib.h"
 #include "string.h"
 
-#define USER_SIZE 128
+#define USER_SIZE 1024
 
 option_t opts[2] = {{"test", arg_none, 't'}, opt_end};
 
