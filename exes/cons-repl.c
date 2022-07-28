@@ -12,6 +12,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "time.h"
+#include <time.h>
 
 #define USER_SIZE 1024
 
@@ -35,6 +37,7 @@ int main(int argc __attribute__((unused)),
       // parse a repl command
       // quit or q, write or w, clear or c
     } else {
+      clock_t time = clock();
       lex_source = lex_new(input);
       parse_source = parser_new();
       ir_source = ir_new();
@@ -49,6 +52,7 @@ int main(int argc __attribute__((unused)),
       printf("result = %" PRIu64 "\n", vm.result);
       ir_free(&ir_source);
       parser_free(&parse_source);
+      printf("time spent %f\n", (double)(clock() - time) / CLOCKS_PER_SEC);
     }
   }
 
