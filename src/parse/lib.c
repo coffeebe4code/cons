@@ -47,20 +47,15 @@ parser_source_t parser_new() {
 
 ast_t *parser_add_loose(parser_source_t *parser, ast_t ast) {
   check_size_parser_free(parser);
-  ast_t *new = malloc(sizeof(ast_t));
-  memcpy(new, &ast, sizeof(ast_t));
-  memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
-  return new;
+  ast_t *new_val = malloc(sizeof(ast_t));
+  memcpy(new_val, &ast, sizeof(ast_t));
+  memcpy(&parser->ez_free[parser->free_len++], &new_val, sizeof(ast_t *));
+  return new_val;
 }
 
-ast_t *parser_add_serial(parser_source_t *parser, ast_t ast) {
-  check_size_parser_free(parser);
+void parser_add_serial(parser_source_t *parser, ast_t *ast) {
   check_size_parser_serial(parser);
-  ast_t *new = malloc(sizeof(ast_t));
-  memcpy(new, &ast, sizeof(ast_t));
-  memcpy(&parser->asts[parser->len++], &new, sizeof(ast_t *));
-  memcpy(&parser->ez_free[parser->free_len++], &new, sizeof(ast_t *));
-  return new;
+  memcpy(&parser->asts[parser->len++], &ast, sizeof(ast_t *));
 }
 
 int has_token_consume(lex_source_t *lexer, token_e tok) {
@@ -288,12 +283,12 @@ ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
     inner_asgnmt = parse_reassign(lexer, parser);
     if (inner_asgnmt != NULL) {
       ast_t combined = AST_Expr(inner_asgnmt);
-      inner_asgnmt = parser_add_serial(parser, combined);
+      inner_asgnmt = parser_add_loose(parser, combined);
     } else {
       inner_asgnmt = parse_return(lexer, parser);
       if (inner_asgnmt != NULL) {
         ast_t combined = AST_Expr(inner_asgnmt);
-        inner_asgnmt = parser_add_serial(parser, combined);
+        inner_asgnmt = parser_add_loose(parser, combined);
       }
     }
   }
@@ -313,6 +308,7 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   ast_t *expr = parse_expr(lexer, parser);
 
   while (expr != NULL) {
+    parser_add_serial(parser, expr);
     end_idx++;
     expr = parse_expr(lexer, parser);
   }
@@ -323,10 +319,10 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
     return NULL;
   }
   ast_t body =
-      AST_Body(NULL, parser->asts[start_idx], 0, (end_idx - start_idx));
+      AST_Body(NULL, parser->asts + start_idx, 0, (end_idx - start_idx));
   expr = parser_add_loose(parser, body);
   *start = start_idx;
-  *end = end_idx;
+  *end = end_idx - 1;
   return expr;
 }
 

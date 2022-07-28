@@ -44,7 +44,7 @@ typedef struct ast_t {
     token_e bin_op;
     token_e as_op;
     token_e type;
-    struct ast_t *exprs;
+    struct ast_t **exprs;
     size_t ident_hash;
     struct ast_t *unary_expr;
   } tok2;
