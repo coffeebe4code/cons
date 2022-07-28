@@ -274,7 +274,7 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
     comp = parse_comp(lexer, parser);
     int has_semi = has_token_consume(lexer, SColon);
     ast_t combined = AST_Return(comp, has_semi);
-    comp = parser_add_serial(parser, combined);
+    comp = parser_add_loose(parser, combined);
   }
   return comp;
 }
@@ -282,34 +282,22 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
 ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *inner_asgnmt = parse_inner_assign(lexer, parser);
   if (inner_asgnmt != NULL) {
-    // inner_asgnmt found
-    ast_t combined = AST_Expr(inner_asgnmt, As);
-    inner_asgnmt = parser_add_serial(parser, combined);
+    ast_t combined = AST_Expr(inner_asgnmt);
+    inner_asgnmt = parser_add_loose(parser, combined);
   } else {
     inner_asgnmt = parse_reassign(lexer, parser);
     if (inner_asgnmt != NULL) {
-      // reassignment found
-      ast_t combined = AST_Expr(inner_asgnmt, inner_asgnmt->tok2.as_op);
+      ast_t combined = AST_Expr(inner_asgnmt);
       inner_asgnmt = parser_add_serial(parser, combined);
     } else {
-      inner_asgnmt = parse_or_log(lexer, parser);
+      inner_asgnmt = parse_return(lexer, parser);
       if (inner_asgnmt != NULL) {
-        // or_log found
-        ast_t combined = AST_Expr(inner_asgnmt, OrLog);
+        ast_t combined = AST_Expr(inner_asgnmt);
         inner_asgnmt = parser_add_serial(parser, combined);
       }
     }
   }
   return inner_asgnmt;
-}
-
-ast_t *parse_statement(lex_source_t *lexer, parser_source_t *parser) {
-  ast_t *expr = parse_expr(lexer, parser);
-  if (expr != NULL) {
-    return expr;
-  }
-  expr = parse_return(lexer, parser);
-  return expr;
 }
 
 ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
@@ -322,11 +310,11 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
     return NULL;
   }
 
-  ast_t *statement = parse_statement(lexer, parser);
+  ast_t *expr = parse_expr(lexer, parser);
 
-  while (statement != NULL) {
+  while (expr != NULL) {
     end_idx++;
-    statement = parse_statement(lexer, parser);
+    expr = parse_expr(lexer, parser);
   }
 
   if (!has_token_consume(lexer, CBrace)) {
@@ -336,11 +324,10 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   }
   ast_t body =
       AST_Body(NULL, parser->asts[start_idx], 0, (end_idx - start_idx));
-  statement = parser_add_loose(parser, body);
+  expr = parser_add_loose(parser, body);
   *start = start_idx;
   *end = end_idx;
-  printf("start_idx %d end_idx %d\n", start_idx, end_idx);
-  return statement;
+  return expr;
 }
 
 void parser_free(parser_source_t *parser) {

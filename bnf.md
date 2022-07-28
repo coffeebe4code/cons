@@ -2,10 +2,9 @@
 
 implemented grammar 
 ```
-body            => "{" statement+ "}" ;
-statement       => expression | return ; // hollow
+body            => "{" expression+ "}" ;
+expression      => inner_asgnmt | reassignment | return;
 return          => "return"? or_log? ";"? ;
-expression      => inner_asgnmt | reassignment | or_log;
 
 inner_asgnmt    => ( "const" | "mut" ) IDENTIFIER ( "=" ) or_log ";"? ;
 reassignment    => IDENTIFIER ( "=" | "/=" | "-=" | "+=" | "*=" | "&=" | "^=" | "|=" ) or_log ";"? ; // best place to do (call)

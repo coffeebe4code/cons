@@ -82,8 +82,8 @@ typedef struct ast_t {
 #define AST_Return(value, has_semi)                                            \
   (ast_t) { .expr_kind = RetFn, .tok1.ret = value, .tok4.semi = has_semi }
 
-#define AST_Expr(value, token)                                                 \
-  (ast_t) { .expr_kind = Expr, .tok1.expr = value, .tok2.type = token }
+#define AST_Expr(value)                                                        \
+  (ast_t) { .expr_kind = Expr, .tok1.expr = value }
 
 #define AST_Body(arguments, expressions, arg_length, expr_length)              \
   (ast_t) {                                                                    \

@@ -122,6 +122,7 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   case Body: {
     puts("body");
     for (size_t i = 0; i < recurse->tok4.expr_len; i++) {
+      puts("body for loop");
       result = ir_recurse(ir, &recurse->tok2.exprs[i]);
     }
     break;
@@ -209,6 +210,7 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     }
     }
   default:
+    puts("default problem with cons");
     break;
   }
   }
