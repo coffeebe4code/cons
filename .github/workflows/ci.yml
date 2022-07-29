@@ -13,9 +13,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
       - name: setup mingw
-        uses: egor-tensin/setup-mingw@v2
+        uses: coffeebe4code/setup-mingw@v2
         with:
           static: 1
+          version: 10.2.0
       - run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-win.c -o ./nobuild
           ./nobuild -r
