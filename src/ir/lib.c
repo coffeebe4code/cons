@@ -119,16 +119,29 @@ ir_source_t ir_new(size_t hash, char *block_name) {
 size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
   size_t result = 0;
   switch (recurse->expr_kind) {
+  case Body: {
+    for (size_t i = 0; i < recurse->tok4.expr_len; i++) {
+      result = ir_recurse(ir, recurse->tok2.exprs[i]);
+    }
+    break;
+  }
   case Expr: {
     result = ir_recurse(ir, recurse->tok1.expr);
-    return result;
     break;
   }
   case Assign: {
     result = ir_recurse(ir, recurse->tok3.assignment);
     insert_var(ir, ir->block_id, recurse->tok1.ident_ptr->tok1.ident,
                recurse->tok1.ident_ptr->tok2.ident_hash, result);
-    return result;
+    break;
+  }
+  case Identifier: {
+    int var_idx = search_var(ir, recurse->tok2.ident_hash, recurse->tok1.ident,
+                             ir->block_id);
+    if (var_idx != -1) {
+      var_t *var = &ir->blocks.data[ir->block_id].vars.data[var_idx];
+      result = var->linears.data[var->linears.len - 1];
+    }
     break;
   }
   case Reassign: {
@@ -138,22 +151,6 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     if (var_idx != -1) {
       var_version(&ir->blocks.data[ir->block_id].vars.data[var_idx], result);
     }
-    return result;
-    break;
-  }
-  case RetFn: {
-    if (recurse->tok1.ret == NULL) {
-      result = ir_retvoid(ir);
-      ir->blocks.data[ir->block_id].kind = RetBlockVoid;
-    } else {
-      size_t value = ir_recurse(ir, recurse->tok1.ret);
-      result = ir_ret(ir, value);
-      ir->blocks.data[ir->block_id].kind = RetBlock;
-    }
-    break;
-  }
-  case Number: {
-    result = ir_constf64(ir, recurse->tok1.number);
     break;
   }
   case BinOp: {
@@ -186,9 +183,25 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
       break;
     }
     }
-  default:
     break;
   }
+  case RetFn: {
+    if (recurse->tok1.ret == NULL) {
+      result = ir_retvoid(ir);
+      ir->blocks.data[ir->block_id].kind = RetBlockVoid;
+    } else {
+      size_t value = ir_recurse(ir, recurse->tok1.ret);
+      result = ir_ret(ir, value);
+      ir->blocks.data[ir->block_id].kind = RetBlock;
+    }
+    break;
+  }
+  case Number: {
+    result = ir_constf64(ir, recurse->tok1.number);
+    break;
+  }
+  default:
+    break;
   }
   return result;
 }

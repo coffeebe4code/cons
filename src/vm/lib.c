@@ -20,9 +20,7 @@
   } while (0);
 
 vm_t vm_new(byte_t *start) {
-  vm_t val = (vm_t){
-      .instrs = start, .ip = start, .regs = {0}, .stack = {0}, .sp = NULL};
-  val.sp = val.stack;
+  vm_t val = (vm_t){.instrs = start, .ip = start, .regs = {0}, .sp = NULL};
   return val;
 }
 
