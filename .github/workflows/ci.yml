@@ -13,7 +13,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v1
       - name: setup mingw
-        uses: coffeebe4code/setup-mingw@v2
+        uses: coffeebe4code/setup-mingw@v1-beta
         with:
           static: 1
           version: 10.2.0
