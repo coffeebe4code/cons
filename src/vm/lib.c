@@ -37,7 +37,7 @@ vm_t vm_run(vm_t vm) {
       INC_IP32();
       break;
     }
-    case Ret: {
+    case RetVal: {
       vm.result = vm.regs[READ_DST()];
       cont = 0;
       break;

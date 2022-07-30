@@ -201,6 +201,8 @@ size_t ir_recurse(ir_source_t *ir, ast_t *recurse) {
     break;
   }
   default:
+    puts("expression type not supported, this is a bug with cons");
+    exit(1);
     break;
   }
   return result;
@@ -216,8 +218,8 @@ void ir_flush_gen(ir_source_t *ir) {
                             local_instr.pt1.raw_data);
         break;
       }
-      case Ret: {
-        byte4_t val = make_gen_instr(Ret, local_instr.dst, 0, 0);
+      case RetVal: {
+        byte4_t val = make_gen_instr(RetVal, local_instr.dst, 0, 0);
         gen_add32(&ir->gen, val);
         break;
       }
@@ -268,7 +270,7 @@ size_t ir_addf64(ir_source_t *source, size_t left, size_t right) {
 }
 
 size_t ir_ret(ir_source_t *source, size_t val) {
-  instr_t instr = make_instr(Ret, val, 0, 0);
+  instr_t instr = make_instr(RetVal, val, 0, 0);
   insert_instr(source, instr, source->block_id);
   return instr.dst;
 }
