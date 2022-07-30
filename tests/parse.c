@@ -13,7 +13,7 @@ DECLARE_MOCK(int, is_high_bin, token_e t);
 DECLARE_MOCK(int, is_low_bin, token_e t);
 DECLARE_MOCK(int, is_comp, token_e t);
 DECLARE_MOCK(int, is_reassign, token_e t);
-DECLARE_MOCK(size_t, hash, const char *str);
+DECLARE_MOCK(size_t, hash_it, const char *str);
 
 void reset() {
   MOCK_RESET(lex_peek);
@@ -111,6 +111,9 @@ void test_reassign() {
   MOCK(lex_peek, (lexeme_t){.tok = Symbol});
   MOCK(lex_peek, (lexeme_t){.tok = AddAs});
   MOCK(lex_peek, (lexeme_t){.tok = Num});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
+  MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});
   MOCK(lex_peek, (lexeme_t){.tok = SColon});

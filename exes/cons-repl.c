@@ -12,8 +12,10 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
+#include "time.h"
+#include <time.h>
 
-#define USER_SIZE 128
+#define USER_SIZE 1024
 
 option_t opts[2] = {{"test", arg_none, 't'}, opt_end};
 
@@ -35,19 +37,22 @@ int main(int argc __attribute__((unused)),
       // parse a repl command
       // quit or q, write or w, clear or c
     } else {
+      clock_t time = clock();
       lex_source = lex_new(input);
       parse_source = parser_new();
       ir_source = ir_new();
-      ast_t *new_ast = parse_low_bin(&lex_source, &parse_source);
-      ir_begin(&ir_source, new_ast);
+      int start = -1;
+      int end = -1;
+      ast_t *body = parse_body(&lex_source, &parse_source, &start, &end);
+      ir_main(&ir_source, body);
 
       ir_flush_gen(&ir_source);
-      gen_add32(&ir_source.gen, make_gen_instr(Ret, ir_source.main_exit, 0, 0));
       vm_t vm = vm_new(ir_source.gen.binary);
       vm = vm_run(vm);
       printf("result = %" PRIu64 "\n", vm.result);
       ir_free(&ir_source);
       parser_free(&parse_source);
+      printf("time spent %f\n", (double)(clock() - time) / CLOCKS_PER_SEC);
     }
   }
 
