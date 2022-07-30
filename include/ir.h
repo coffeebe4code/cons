@@ -34,3 +34,6 @@ size_t ir_subf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_modf64(ir_source_t *source, size_t left, size_t right);
 size_t ir_ret(ir_source_t *source, size_t val);
 size_t ir_retvoid(ir_source_t *source);
+void insert_var(ir_source_t *ir, size_t block_id, char *var_name, size_t hash,
+                size_t reg_id);
+int search_var(ir_source_t *ir, size_t hash, char *name, size_t block_id);
