@@ -12,7 +12,14 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v1
+      - name: cache mingw setup
+        id: cache-mingw
+        uses: actions/cache@v3
+        with:
+          path: C:\ProgramData\chocolatey\lib\mingw
+          key: ${{ runner.os }}
       - name: setup mingw
+        if: steps.cache-mingw.outputs.cache-hit != 'true'
         uses: coffeebe4code/setup-mingw@v1-beta-2
         with:
           static: 1
