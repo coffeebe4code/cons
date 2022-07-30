@@ -35,7 +35,9 @@ int main() {
   ir_free(&ir_source);
   parser_free(&parse_source);
   if (result == 42) {
+    puts("success");
     return 0;
   }
+  puts("fail");
   return 1;
 }
