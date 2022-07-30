@@ -328,6 +328,9 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
 
 void parser_free(parser_source_t *parser) {
   for (size_t i = 0; i < parser->free_len; i++) {
+    if (parser->ez_free[i]->expr_kind == Identifier) {
+      free(parser->ez_free[i]->tok1.ident);
+    }
     free(parser->ez_free[i]);
   }
   free(parser->asts);

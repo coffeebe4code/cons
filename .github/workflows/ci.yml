@@ -12,12 +12,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v1
+      - name: cache monthly
+        run: |
+          echo "name=CACHE_MONTH" >> date '+%b'
       - name: cache mingw setup
         id: cache-mingw
         uses: actions/cache@v3
         with:
           path: C:\ProgramData\chocolatey\lib\mingw
-          key: ${{ runner.os }}
+          key: ${{ env.CACHE_MONTH }}
       - name: setup mingw
         if: steps.cache-mingw.outputs.cache-hit != 'true'
         uses: coffeebe4code/setup-mingw@v1-beta-2
@@ -27,6 +30,7 @@ jobs:
       - run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-win.c -o ./nobuild
           ./nobuild -r
+          ./target/e2e
   build-linux-gcc:
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +39,7 @@ jobs:
         run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
           ./nobuild -d
+          ./target/e2e
   build-linux-clang:
     runs-on: ubuntu-latest
     steps:
@@ -43,6 +48,7 @@ jobs:
         run: |
           clang -Wall -Werror -Wextra -pthread -O3 ./nobuild-clang.c -o ./nobuild
           ./nobuild -d
+          ./target/e2e
   build-macos:
     runs-on: macOS-latest
     steps:
@@ -51,3 +57,4 @@ jobs:
         run: |
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
           ./nobuild -d
+          ./target/e2e
