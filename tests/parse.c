@@ -61,7 +61,6 @@ void test_terminal() {
   ast_t *val2 = parse_ident(&lex2, &parse2);
   ASSERT(val2->expr_kind == Identifier);
   ASSERT_STR_EQ(val2->tok1.ident, input2);
-  free(val2->tok1.ident);
   parser_free(&parse2);
 }
 
@@ -146,7 +145,6 @@ void test_reassign() {
   ASSERT(val->tok3.assignment->tok1.number == 7);
   ASSERT(val->tok4.semi == 1);
 
-  free(val->tok1.ident_ptr->tok1.ident);
   parser_free(&parse);
 }
 
