@@ -2,6 +2,14 @@
 
 implemented grammar 
 ```
+program         => ( top )* EOF
+
+signature       => VAL_TYPE | IDENTIFIER | "<" serial_types ">" ;
+serial_types    => IDENTIFIER | IDENTIFIER "," serial_types " ;
+
+top             => "pub"? ( func_decl | body | expression ) ;
+func_decl       => "fn" IDENTIFIER "(" arguments* ")" body ;
+type_decl       => "type" IDENTIFIER "(" arguments* ")" body ;
 body            => "{" expression+ "}" ;
 expression      => inner_asgnmt | reassignment | return;
 return          => "return"? or_log? ";"? ;
