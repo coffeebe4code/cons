@@ -28,6 +28,7 @@ jobs:
           static: 1
           version: 10.2.0
       - run: |
+          set -e
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-win.c -o ./nobuild
           ./nobuild -r
           ./target/e2e
@@ -37,6 +38,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
+          set -e
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
           ./nobuild -d
           ./target/e2e
@@ -46,6 +48,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
+          set -e
           clang -Wall -Werror -Wextra -pthread -O3 ./nobuild-clang.c -o ./nobuild
           ./nobuild -d
           ./target/e2e
@@ -55,6 +58,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: build
         run: |
+          set -e
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-gcc.c -o ./nobuild
           ./nobuild -d
           ./target/e2e

@@ -255,7 +255,8 @@ ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
       if (or_log != NULL) {
 
         int has_semi = has_token_consume(lexer, SColon);
-        ast_t combined = AST_Reassign(ident, tok, or_log, has_semi);
+        ast_t combined =
+            AST_Reassign(ident, tok, or_log, has_semi ? SColon : Empty);
         ident = parser_add_loose(parser, &combined);
       }
     }
@@ -268,7 +269,7 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
   if (has_token_consume(lexer, Return)) {
     comp = parse_comp(lexer, parser);
     int has_semi = has_token_consume(lexer, SColon);
-    ast_t combined = AST_Return(comp, has_semi);
+    ast_t combined = AST_Return(comp, has_semi ? SColon : Empty);
     comp = parser_add_loose(parser, &combined);
   }
   return comp;
@@ -325,6 +326,42 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   *end = end_idx - 1;
   return expr;
 }
+
+// ast_t *parse_property(lex_source_t *lexer, parser_source_t *parser) {
+//  int pub = has_token_consume(lexer, Pub);
+//  ast_t *inner = parse_ident(lexer, parser);
+//  if (inner != NULL) {
+//    if (!has_token_consume(lexer, Colon)) {
+//      return NULL;
+//    }
+//    inner = parse_signature(lexer, parser);
+//    if (inner != NULL) {
+//      token_e terminator = has_either_consume2(lexer, Comma, SColon);
+//      ast_t combined = AST_Pr(inner_asgnmt);
+//    }
+//  } else {
+//    inner_asgnmt = parse_reassign(lexer, parser);
+//    if (inner_asgnmt != NULL) {
+//      ast_t combined = AST_Expr(inner_asgnmt);
+//      inner_asgnmt = parser_add_loose(parser, &combined);
+//    } else {
+//      inner_asgnmt = parse_return(lexer, parser);
+//      if (inner_asgnmt != NULL) {
+//        ast_t combined = AST_Expr(inner_asgnmt);
+//        inner_asgnmt = parser_add_loose(parser, &combined);
+//      }
+//    }
+//  }
+//  return inner_asgnmt;
+//}
+ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser,
+                        int *start, int *end);
+ast_t *parse_top(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_func_decl(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_serial_types(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_signature(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_program(lex_source_t *lexer, parser_source_t *parser);
 
 void parser_free(parser_source_t *parser) {
   for (size_t i = 0; i < parser->free_len; i++) {

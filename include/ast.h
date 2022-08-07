@@ -4,6 +4,7 @@
 
 typedef enum expr_e {
   Body,
+  Property,
   Expr,
   RetFn,
   Assign,
@@ -15,21 +16,23 @@ typedef enum expr_e {
   Single,
 } expr_e;
 
-// Body 4 .args .exprs .args_len .expr_len
-// Expr 2 .expr .type
-// RetFn 2 .ret _blank _blank .semi
-// Assign 4 .ident_ptr .type .assignment .semi
-// Reassign 4 .ident_ptr .as_op .assignment .semi
-// Number 2 .number .type
+// Body       4 .args .exprs .args_len .expr_len
+// Property   4 .is_pub .prop_ptr .semi_opt _blank .sig
+// Expr       1 .expr
+// RetFn      2 .ret _blank _blank .semi_opt
+// Assign     5 .ident_ptr .sig .assignment .semi_opt .mut
+// Reassign   4 .ident_ptr .as_op .assignment .semi_opt
+// Number     2 .number .type
 // Identifier 2 .ident .ident_hash
-// BinOp 3 .bin_left_expr .bin_op .bin_right_expr
-// UnOp 2 .unary_op .unary_expr
-// Single 1 .single_op
+// BinOp      3 .bin_left_expr .bin_op .bin_right_expr
+// UnOp       2 .unary_op .unary_expr
+// Single     1 .single_op
 
 typedef struct ast_t {
   expr_e expr_kind;
   union {
     byte8_t number;
+    int is_pub;
     struct ast_t *ident_ptr;
     struct ast_t *args;
     struct ast_t *symbol;
@@ -47,6 +50,7 @@ typedef struct ast_t {
     struct ast_t **exprs;
     size_t ident_hash;
     struct ast_t *unary_expr;
+    struct ast_t *sig;
   } tok2;
   union {
     size_t args_len;
@@ -55,8 +59,11 @@ typedef struct ast_t {
   } tok3;
   union {
     size_t expr_len;
-    int semi;
+    token_e semi_opt;
   } tok4;
+  union {
+    token_e mut;
+  } tok5;
 } ast_t;
 
 #define AST_Num(val)                                                           \
@@ -73,14 +80,14 @@ typedef struct ast_t {
     .expr_kind = Identifier, .tok1.ident = val, .tok2.ident_hash = hash        \
   }
 
-#define AST_Reassign(ident, op, asgn, has_semi)                                \
+#define AST_Reassign(ident, op, asgn, semi)                                    \
   (ast_t) {                                                                    \
     .expr_kind = Reassign, .tok1.ident_ptr = ident, .tok2.as_op = op,          \
-    .tok3.assignment = asgn, .tok4.semi = has_semi                             \
+    .tok3.assignment = asgn, .tok4.semi_opt = semi                             \
   }
 
-#define AST_Return(value, has_semi)                                            \
-  (ast_t) { .expr_kind = RetFn, .tok1.ret = value, .tok4.semi = has_semi }
+#define AST_Return(value, semi)                                                \
+  (ast_t) { .expr_kind = RetFn, .tok1.ret = value, .tok4.semi_opt = semi }
 
 #define AST_Expr(value)                                                        \
   (ast_t) { .expr_kind = Expr, .tok1.expr = value }
@@ -91,10 +98,10 @@ typedef struct ast_t {
     .tok3.args_len = arg_length, .tok4.expr_len = expr_length                  \
   }
 
-#define AST_Assign(ident, mutability, asgn, has_semi)                          \
+#define AST_Assign(ident, mutability, asgn, semi)                              \
   (ast_t) {                                                                    \
     .expr_kind = Assign, .tok1.ident_ptr = ident, .tok2.type = mutability,     \
-    .tok3.assignment = asgn, .tok4.semi = has_semi                             \
+    .tok3.assignment = asgn, .tok4.semi_opt = semi                             \
   }
 
 #define AST_BinOp(left, tok, right)                                            \

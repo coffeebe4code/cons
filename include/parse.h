@@ -20,6 +20,15 @@ typedef struct {
 
 parser_source_t parser_new();
 void parser_free(parser_source_t *parser);
+ast_t *parse_program(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_signature(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_serial_types(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_top(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_func_decl(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser,
+                        int *start, int *end);
+ast_t *parse_property(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
                   int *end);
 ast_t *parse_statement(lex_source_t *lexer, parser_source_t *parser);
