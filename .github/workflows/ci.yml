@@ -28,7 +28,7 @@ jobs:
           static: 1
           version: 10.2.0
       - run: |
-          set -e
+          where gcc
           gcc -Wall -Werror -Wextra -pthread -O3 ./nobuild-win.c -o ./nobuild
           ./nobuild -r
           ./target/e2e
