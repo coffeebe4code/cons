@@ -5,6 +5,7 @@
 typedef enum expr_e {
   Body,
   Property,
+  Properties,
   Expr,
   RetFn,
   Assign,
@@ -17,7 +18,8 @@ typedef enum expr_e {
 } expr_e;
 
 // Body       4 .args .exprs .args_len .expr_len
-// Property   4 .is_pub .prop_ptr .semi_opt _blank .sig
+// Properties 2 .properties .props_len
+// Property   4 .is_pub .sig .prop_ptr .semi_opt
 // Expr       1 .expr
 // RetFn      2 .ret _blank _blank .semi_opt
 // Assign     5 .ident_ptr .sig .assignment .semi_opt .mut
@@ -42,6 +44,7 @@ typedef struct ast_t {
     struct ast_t *ret;
     token_e unary_op;
     token_e single_op;
+    struct ast_t **properties;
   } tok1;
   union {
     token_e bin_op;
@@ -50,12 +53,14 @@ typedef struct ast_t {
     struct ast_t **exprs;
     size_t ident_hash;
     struct ast_t *unary_expr;
-    struct ast_t *sig;
+    struct ast_t *prop_ptr;
+    size_t props_len;
   } tok2;
   union {
     size_t args_len;
     struct ast_t *bin_right_expr;
     struct ast_t *assignment;
+    struct ast_t *sig;
   } tok3;
   union {
     size_t expr_len;
@@ -92,10 +97,22 @@ typedef struct ast_t {
 #define AST_Expr(value)                                                        \
   (ast_t) { .expr_kind = Expr, .tok1.expr = value }
 
+#define AST_Property(pub, ptr, sign, semi)                                     \
+  (ast_t) {                                                                    \
+    .expr_kind = Property, .tok1.is_pub = pub, .tok2.prop_ptr = ptr,           \
+    .tok3.sig = sign, .tok4.semi_opt = semi                                    \
+  }
+
 #define AST_Body(arguments, expressions, arg_length, expr_length)              \
   (ast_t) {                                                                    \
     .expr_kind = Body, .tok1.args = arguments, .tok2.exprs = expressions,      \
     .tok3.args_len = arg_length, .tok4.expr_len = expr_length                  \
+  }
+
+#define AST_Properties(props, prop_length)                                     \
+  (ast_t) {                                                                    \
+    .expr_kind = Properties, .tok1.properties = props,                         \
+    .tok2.props_len = prop_length                                              \
   }
 
 #define AST_Assign(ident, mutability, asgn, semi)                              \
