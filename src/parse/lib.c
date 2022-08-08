@@ -296,13 +296,10 @@ ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
   return inner_asgnmt;
 }
 
-ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
-                  int *end) {
+ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser) {
   int start_idx = parser->len;
   int end_idx = parser->len;
   if (!has_token_consume(lexer, OBrace)) {
-    *start = -1;
-    *end = -1;
     return NULL;
   }
 
@@ -315,15 +312,11 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   }
 
   if (!has_token_consume(lexer, CBrace)) {
-    *start = start_idx;
-    *end = -1;
     return NULL;
   }
   ast_t body =
       AST_Body(NULL, parser->asts + start_idx, 0, (end_idx - start_idx));
   expr = parser_add_loose(parser, &body);
-  *start = start_idx;
-  *end = end_idx - 1;
   return expr;
 }
 
@@ -350,13 +343,10 @@ ast_t *parse_property(lex_source_t *lexer, parser_source_t *parser) {
   return inner;
 }
 
-ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser,
-                        int *start, int *end) {
+ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser) {
   int start_idx = parser->len;
   int end_idx = parser->len;
   if (!has_token_consume(lexer, OBrace)) {
-    *start = -1;
-    *end = -1;
     return NULL;
   }
 
@@ -369,19 +359,36 @@ ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser,
   }
 
   if (!has_token_consume(lexer, CBrace)) {
-    *start = start_idx;
-    *end = -1;
     return NULL;
   }
   ast_t props = AST_Properties(parser->asts + start_idx, (end_idx - start_idx));
   expr = parser_add_loose(parser, &props);
-  *start = start_idx;
-  *end = end_idx - 1;
   return expr;
 }
-ast_t *parse_top(lex_source_t *lexer, parser_source_t *parser);
+
+ast_t *parse_top(lex_source_t *lexer, parser_source_t *parser) {
+  // this is the only parser that modifies the output for "pub".
+
+  return NULL;
+}
 ast_t *parse_func_decl(lex_source_t *lexer, parser_source_t *parser);
-ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser) {
+  if (has_token_consume(lexer, Type)) {
+    ast_t *ident = parse_ident(lexer, parser);
+    if (ident != NULL) {
+      ast_t *signature = NULL;
+      if (has_token_consume(lexer, Colon)) {
+        signature = parse_signature(lexer, parser);
+      }
+      ast_t *properties = parse_properties(lexer, parser);
+      ast_t combined = AST_TypeDecl(0, ident, signature, properties);
+      return parser_add_loose(parser, &combined);
+    }
+    return NULL;
+  }
+
+  return NULL;
+}
 ast_t *parse_serial_types(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_signature(lex_source_t *lexer, parser_source_t *parser) {}
 ast_t *parse_program(lex_source_t *lexer, parser_source_t *parser);

@@ -4,6 +4,7 @@
 
 typedef enum expr_e {
   Body,
+  TypeDecl,
   Property,
   Properties,
   Expr,
@@ -18,6 +19,7 @@ typedef enum expr_e {
 } expr_e;
 
 // Body       4 .args .exprs .args_len .expr_len
+// TypeDecl   4 .is_pub .ident_ptr .sig .properties_ptr
 // Properties 2 .properties .props_len
 // Property   4 .is_pub .sig .prop_ptr .semi_opt
 // Expr       1 .expr
@@ -101,6 +103,13 @@ typedef struct ast_t {
   (ast_t) {                                                                    \
     .expr_kind = Property, .tok1.is_pub = pub, .tok2.prop_ptr = ptr,           \
     .tok3.sig = sign, .tok4.semi_opt = semi                                    \
+  }
+
+// TypeDecl   4 .is_pub .ident_ptr .sig .properties_ptr
+#define AST_TypeDecl(pub, ident, sign, prop_ptr)                               \
+  (ast_t) {                                                                    \
+    .expr_kind = TypeDecl, .tok1.is_pub = pub, .tok2.ident_ptr = ident,        \
+    .tok3.sig = sign, .tok4.properties_ptr = prop_ptr                          \
   }
 
 #define AST_Body(arguments, expressions, arg_length, expr_length)              \
