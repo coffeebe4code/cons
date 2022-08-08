@@ -12,6 +12,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v1
+      - name: cache layer
+        uses: actions/cache@v3
+        with:
+          path: |
       - name: setup mingw
         uses: coffeebe4code/setup-mingw@v1-beta-2
         with:
