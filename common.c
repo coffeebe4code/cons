@@ -27,4 +27,6 @@ void common_init() {
   DEPS("ir", "ast", "pros", "byte", "gen");
   EXE("cons-repl", "cli", "ast", "ir", "lex", "lexeme", "parse", "pros",
       "token", "vm", "error", "hash");
+  EXE("e2e", "ast", "ir", "lex", "lexeme", "parse", "pros", "token", "vm",
+      "hash");
 }

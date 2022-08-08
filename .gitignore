@@ -1,4 +1,5 @@
 nobuild.exe
+callgrind.out.*
 
 # nobuild
 nobuild

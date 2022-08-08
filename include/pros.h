@@ -16,7 +16,7 @@ typedef enum {
 typedef enum {
   NoOp = 0,
   RetVoid,
-  Ret,
+  RetVal,
   Load,
   Store,
   Phi,
