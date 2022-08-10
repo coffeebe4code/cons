@@ -57,6 +57,7 @@ typedef struct ast_t {
     struct ast_t *unary_expr;
     struct ast_t *prop_ptr;
     size_t props_len;
+    struct ast_t *ident_ptr;
   } tok2;
   union {
     size_t args_len;
@@ -67,6 +68,7 @@ typedef struct ast_t {
   union {
     size_t expr_len;
     token_e semi_opt;
+    struct ast_t *properties_ptr;
   } tok4;
   union {
     token_e mut;

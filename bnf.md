@@ -28,4 +28,5 @@ unary           => ( "!" | "-" ) unary
 TERMINAL        => "true" | "false" | "null" | NUMBER | IDENTIFIER
 NUMBER          => DIGIT+ ( "." DIGIT+ )?
 IDENTIFIER      => < any ALPHA except "_" > ( ALPHA | DIGIT )*
+VAL_TYPE        => <value types `is_val` in ./lex/lib.c>
 ```

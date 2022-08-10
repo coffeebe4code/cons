@@ -42,6 +42,7 @@ int is_num(token_e tok) {
   case U8:
   case I8:
   case Bit:
+  case Byte:
   case F64:
   case F32:
   case D32:
@@ -49,6 +50,41 @@ int is_num(token_e tok) {
   case Hex:
   case Bin:
   case Num:
+    return 1;
+    break;
+  default:
+    return 0;
+    break;
+  }
+}
+
+int is_val(token_e tok) {
+  switch (tok) {
+  case I64:
+  case I32:
+  case I16:
+  case I8:
+  case U64:
+  case U32:
+  case U16:
+  case U8:
+  case Bit:
+  case Byte:
+  case F64:
+  case F32:
+  case D32:
+  case D64:
+  case Hex:
+  case Bin:
+  case Num:
+  case Bool:
+  case Char:
+  case WString:
+  case Void:
+  case Rest:
+  case Decimal:
+  case Never:
+  case Undef:
     return 1;
     break;
   default:

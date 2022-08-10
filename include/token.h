@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#define KEYWORD_LENGTH 52
+#define KEYWORD_LENGTH 56
 
 // clang-format off
 static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -56,6 +56,10 @@ static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
   "gen",
   "undef",
   "never",
+  "bool",
+  "byte",
+  "fn",
+  "contract",
 };
 
 static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -111,6 +115,10 @@ static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
   3,
   5,
   5,
+  4,
+  4,
+  2,
+  8
 };
 // clang-format on
 
@@ -229,6 +237,10 @@ typedef enum token_e {
   Gen,
   Undef,
   Never,
+  Bool,
+  Byte,
+  Fn,
+  Contract
 } token_e;
 
 token_e token_next(char *data, int *len);
