@@ -387,41 +387,43 @@ ast_t *parse_func_decl(lex_source_t *lexer, parser_source_t *parser) {
     ident = parse_ident(lexer, parser);
     if (ident != NULL) {
       if (has_token_consume(lexer, OParen)) {
+        ast_t *args = parse_arguments(lexer, parser);
       }
     }
     return ident;
   }
-  ast_t *parse_type_decl(lex_source_t * lexer, parser_source_t * parser) {
-    if (has_token_consume(lexer, Type)) {
-      ast_t *ident = parse_ident(lexer, parser);
-      if (ident != NULL) {
-        ast_t *signature = NULL;
-        if (has_token_consume(lexer, Colon)) {
-          signature = parse_signature(lexer, parser);
-        }
-        ast_t *properties = parse_properties(lexer, parser);
-        ast_t combined = AST_TypeDecl(0, ident, signature, properties);
-        return parser_add_loose(parser, &combined);
+}
+ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser) {
+  if (has_token_consume(lexer, Type)) {
+    ast_t *ident = parse_ident(lexer, parser);
+    if (ident != NULL) {
+      ast_t *signature = NULL;
+      if (has_token_consume(lexer, Colon)) {
+        signature = parse_signature(lexer, parser);
       }
-      return NULL;
+      ast_t *properties = parse_properties(lexer, parser);
+      ast_t combined = AST_TypeDecl(0, ident, signature, properties);
+      return parser_add_loose(parser, &combined);
     }
-
     return NULL;
   }
-  ast_t *parse_serial_types(lex_source_t * lexer, parser_source_t * parser);
-  ast_t *parse_signature(lex_source_t * lexer, parser_source_t * parser) {
-    ast_t *val = parse_val_type(lexer, parser);
-    return val;
-  }
-  ast_t *parse_program(lex_source_t * lexer, parser_source_t * parser);
 
-  void parser_free(parser_source_t * parser) {
-    for (size_t i = 0; i < parser->free_len; i++) {
-      if (parser->ez_free[i]->expr_kind == Identifier) {
-        free(parser->ez_free[i]->tok1.ident);
-      }
-      free(parser->ez_free[i]);
+  return NULL;
+}
+ast_t *parse_serial_types(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_signature(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *val = parse_val_type(lexer, parser);
+  return val;
+}
+ast_t *parse_program(lex_source_t *lexer, parser_source_t *parser);
+
+void parser_free(parser_source_t *parser) {
+  for (size_t i = 0; i < parser->free_len; i++) {
+    if (parser->ez_free[i]->expr_kind == Identifier) {
+      free(parser->ez_free[i]->tok1.ident);
     }
-    free(parser->asts);
-    free(parser->ez_free);
+    free(parser->ez_free[i]);
   }
+  free(parser->asts);
+  free(parser->ez_free);
+}
