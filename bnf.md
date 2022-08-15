@@ -3,11 +3,12 @@
 ```
 program         => ( top )* EOF
 
-signature       => VAL_TYPE | serial_types
+signature       => VAL_TYPE | "<" serial_types ">
 serial_types    => IDENTIFIER | ( IDENTIFIER "," serial_types )
 
 top             => "pub"? ( func_decl | body | expression | type_decl )
-func_decl       => "fn" IDENTIFIER "(" arguments* ")" body
+func_decl       => "fn" IDENTIFIER "(" argument* ")" body
+argument        =>  IDENTIFIER | IDENTIFIER "," argument
 type_decl       => "type" IDENTIFIER (":" signature)? properties
 properties      => "{" property+ "}"
 property        => "pub"? ( ( IDENTIFIER ":" signature ( "," | ";" )? ) | func_decl )

@@ -4,6 +4,7 @@
 
 typedef enum expr_e {
   Body,
+  Argument,
   TypeDecl,
   Property,
   Properties,
@@ -19,6 +20,7 @@ typedef enum expr_e {
 } expr_e;
 
 // Body       4 .args .exprs .args_len .expr_len
+// Argument   2 .ident_ptr .sig
 // TypeDecl   4 .is_pub .ident_ptr .sig .properties_ptr
 // Properties 2 .properties .props_len
 // Property   4 .is_pub .sig .prop_ptr .semi_opt
@@ -58,6 +60,7 @@ typedef struct ast_t {
     struct ast_t *prop_ptr;
     size_t props_len;
     struct ast_t *ident_ptr;
+    struct ast_t *sig;
   } tok2;
   union {
     size_t args_len;
@@ -107,7 +110,6 @@ typedef struct ast_t {
     .tok3.sig = sign, .tok4.semi_opt = semi                                    \
   }
 
-// TypeDecl   4 .is_pub .ident_ptr .sig .properties_ptr
 #define AST_TypeDecl(pub, ident, sign, prop_ptr)                               \
   (ast_t) {                                                                    \
     .expr_kind = TypeDecl, .tok1.is_pub = pub, .tok2.ident_ptr = ident,        \
@@ -118,6 +120,15 @@ typedef struct ast_t {
   (ast_t) {                                                                    \
     .expr_kind = Body, .tok1.args = arguments, .tok2.exprs = expressions,      \
     .tok3.args_len = arg_length, .tok4.expr_len = expr_length                  \
+  }
+
+#define AST_Argument(ident, sign)                                              \
+  (ast_t) { .expr_kind = Argument, .tok1.ident_ptr = ident, .tok2.sig = sign }
+
+#define AST_Properties(props, prop_length)                                     \
+  (ast_t) {                                                                    \
+    .expr_kind = Properties, .tok1.properties = props,                         \
+    .tok2.props_len = prop_length                                              \
   }
 
 #define AST_Properties(props, prop_length)                                     \
