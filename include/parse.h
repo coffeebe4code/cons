@@ -42,5 +42,6 @@ ast_t *parse_high_bin(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_unary(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_val_type(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_arguments(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser);
 ast_t *parse_ident(lex_source_t *lexer, parser_source_t *parser);

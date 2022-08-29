@@ -5,6 +5,7 @@
 typedef enum expr_e {
   Body,
   Argument,
+  Arguments,
   TypeDecl,
   Property,
   Properties,
@@ -21,6 +22,7 @@ typedef enum expr_e {
 
 // Body       4 .args .exprs .args_len .expr_len
 // Argument   2 .ident_ptr .sig
+// Arguments  2 .arguments .args_len
 // TypeDecl   4 .is_pub .ident_ptr .sig .properties_ptr
 // Properties 2 .properties .props_len
 // Property   4 .is_pub .sig .prop_ptr .semi_opt
@@ -49,6 +51,7 @@ typedef struct ast_t {
     token_e unary_op;
     token_e single_op;
     struct ast_t **properties;
+    struct ast_t **arguments;
   } tok1;
   union {
     token_e bin_op;
@@ -61,6 +64,7 @@ typedef struct ast_t {
     size_t props_len;
     struct ast_t *ident_ptr;
     struct ast_t *sig;
+    size_t args_len;
   } tok2;
   union {
     size_t args_len;
@@ -129,6 +133,12 @@ typedef struct ast_t {
   (ast_t) {                                                                    \
     .expr_kind = Properties, .tok1.properties = props,                         \
     .tok2.props_len = prop_length                                              \
+  }
+
+#define AST_Arguments(args, arg_len)                                           \
+  (ast_t) {                                                                    \
+    .expr_kind = Arguments, .tok1.arguments = args,                            \
+    .tok2.args_len = arg_length                                                \
   }
 
 #define AST_Properties(props, prop_length)                                     \

@@ -7,8 +7,8 @@ signature       => VAL_TYPE | "<" serial_types ">
 serial_types    => IDENTIFIER | ( IDENTIFIER "," serial_types )
 
 top             => "pub"? ( func_decl | body | expression | type_decl )
-func_decl       => "fn" IDENTIFIER "(" argument* ")" body
-argument        =>  IDENTIFIER | IDENTIFIER "," argument
+func_decl       => "fn" IDENTIFIER "(" arg_decl* ")" body
+arg_decl        =>  IDENTIFIER ( ":" signature )? | IDENTIFIER ( ":" signature )? "," argument
 type_decl       => "type" IDENTIFIER (":" signature)? properties
 properties      => "{" property+ "}"
 property        => "pub"? ( ( IDENTIFIER ":" signature ( "," | ";" )? ) | func_decl )

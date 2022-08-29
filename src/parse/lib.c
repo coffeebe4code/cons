@@ -330,11 +330,16 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser) {
   return expr;
 }
 
-ast_t *parse_argument(lex_source_t *lexer, parser_source_t *parser) {
+ast_t *parse_arguments(lex_source_t *lexer, parser_source_t *parser) {
   int start_idx = parser->len;
   int end_idx = parser->len;
 
   ast_t *ident = parse_ident(lexer, parser);
+  ast_t *sig = NULL;
+  if (has_token_consume(lexer, Colon)) {
+    sig = parse_signature(lexer, parser);
+  }
+  ast_t combined = AST_Argument(ident, sig);
 
   while (ident != NULL) {
     parser_add_serial(parser, ident);
