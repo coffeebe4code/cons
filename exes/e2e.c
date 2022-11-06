@@ -23,9 +23,7 @@ int main() {
   lex_source = lex_new(input);
   parse_source = parser_new();
   ir_source = ir_new();
-  int start = -1;
-  int end = -1;
-  ast_t *body = parse_body(&lex_source, &parse_source, &start, &end);
+  ast_t *body = parse_body(&lex_source, &parse_source);
   ir_main(&ir_source, body);
 
   ir_flush_gen(&ir_source);
