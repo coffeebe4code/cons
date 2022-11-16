@@ -13,6 +13,7 @@ lexeme_t lex_collect(lex_source_t *lex);
 lexeme_t lex_peek(lex_source_t *lex);
 lex_source_t lex_new(char *start);
 int is_num(token_e tok);
+int is_val(token_e tok);
 int is_bin_op(token_e tok);
 int is_high_bin(token_e tok);
 int is_reassign(token_e tok);

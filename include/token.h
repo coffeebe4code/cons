@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#define KEYWORD_LENGTH 48
+#define KEYWORD_LENGTH 56
 
 // clang-format off
 static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -9,7 +9,9 @@ static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
   "macro",
   "test",
   "mut",
+  "let",
   "const",
+  "once",
   "i32",
   "u32",
   "u64",
@@ -52,6 +54,12 @@ static char *keyword_list[KEYWORD_LENGTH] __attribute__((unused)) = {
   "void",
   "iface",
   "gen",
+  "undef",
+  "never",
+  "bool",
+  "byte",
+  "fn",
+  "contract",
 };
 
 static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
@@ -60,7 +68,9 @@ static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
   5,
   4,
   3, // mut
+  3,
   5,
+  4, // once
   3,
   3,
   3,
@@ -103,6 +113,12 @@ static int keyword_len[KEYWORD_LENGTH] __attribute__((unused)) = {
   4,
   5,
   3,
+  5,
+  5,
+  4,
+  4,
+  2,
+  8
 };
 // clang-format on
 
@@ -112,7 +128,9 @@ typedef enum token_e {
   Macro,
   Test,
   Mut,
+  Let,
   Const,
+  Once,
   I32,
   U32,
   U64,
@@ -214,7 +232,15 @@ typedef enum token_e {
   NewLine,
   Wsp,
   Error,
-  Empty
+  Empty,
+  Iface,
+  Gen,
+  Undef,
+  Never,
+  Bool,
+  Byte,
+  Fn,
+  Contract
 } token_e;
 
 token_e token_next(char *data, int *len);

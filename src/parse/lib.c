@@ -118,6 +118,16 @@ ast_t *parse_num(lex_source_t *lexer, parser_source_t *parser) {
   return NULL;
 }
 
+ast_t *parse_val_type(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *val = NULL;
+  if (is_val(lex_peek(lexer).tok)) {
+    lexeme_t lexeme = lex_collect(lexer);
+    ast_t ast = AST_Single(lexeme.tok);
+    val = parser_add_loose(parser, &ast);
+  }
+  return val;
+}
+
 ast_t *parse_terminal(lex_source_t *lexer, parser_source_t *parser) {
   ast_t *val = NULL;
   val = parse_true(lexer, parser);
@@ -255,7 +265,8 @@ ast_t *parse_reassign(lex_source_t *lexer, parser_source_t *parser) {
       if (or_log != NULL) {
 
         int has_semi = has_token_consume(lexer, SColon);
-        ast_t combined = AST_Reassign(ident, tok, or_log, has_semi);
+        ast_t combined =
+            AST_Reassign(ident, tok, or_log, has_semi ? SColon : Empty);
         ident = parser_add_loose(parser, &combined);
       }
     }
@@ -268,7 +279,7 @@ ast_t *parse_return(lex_source_t *lexer, parser_source_t *parser) {
   if (has_token_consume(lexer, Return)) {
     comp = parse_comp(lexer, parser);
     int has_semi = has_token_consume(lexer, SColon);
-    ast_t combined = AST_Return(comp, has_semi);
+    ast_t combined = AST_Return(comp, has_semi ? SColon : Empty);
     comp = parser_add_loose(parser, &combined);
   }
   return comp;
@@ -295,13 +306,10 @@ ast_t *parse_expr(lex_source_t *lexer, parser_source_t *parser) {
   return inner_asgnmt;
 }
 
-ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
-                  int *end) {
+ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser) {
   int start_idx = parser->len;
   int end_idx = parser->len;
   if (!has_token_consume(lexer, OBrace)) {
-    *start = -1;
-    *end = -1;
     return NULL;
   }
 
@@ -314,17 +322,101 @@ ast_t *parse_body(lex_source_t *lexer, parser_source_t *parser, int *start,
   }
 
   if (!has_token_consume(lexer, CBrace)) {
-    *start = start_idx;
-    *end = -1;
     return NULL;
   }
   ast_t body =
       AST_Body(NULL, parser->asts + start_idx, 0, (end_idx - start_idx));
   expr = parser_add_loose(parser, &body);
-  *start = start_idx;
-  *end = end_idx - 1;
   return expr;
 }
+
+ast_t *parse_property(lex_source_t *lexer, parser_source_t *parser) {
+  int pub = has_token_consume(lexer, Pub);
+  ast_t *inner = parse_ident(lexer, parser);
+  if (inner != NULL) {
+    if (!has_token_consume(lexer, Colon)) {
+      return NULL;
+    }
+    ast_t *signature = parse_signature(lexer, parser);
+    if (inner != NULL) {
+      token_e terminator = has_either_consume2(lexer, Comma, SColon);
+      ast_t combined = AST_Property(pub, inner, signature, terminator);
+      return parser_add_loose(parser, &combined);
+    }
+  } else {
+    inner = parse_func_decl(lexer, parser);
+    if (inner != NULL) {
+      ast_t combined = AST_Property(pub, inner, NULL, Empty);
+      inner = parser_add_loose(parser, &combined);
+    }
+  }
+  return inner;
+}
+
+ast_t *parse_properties(lex_source_t *lexer, parser_source_t *parser) {
+  int start_idx = parser->len;
+  int end_idx = parser->len;
+  if (!has_token_consume(lexer, OBrace)) {
+    return NULL;
+  }
+
+  ast_t *expr = parse_property(lexer, parser);
+
+  while (expr != NULL) {
+    parser_add_serial(parser, expr);
+    end_idx++;
+    expr = parse_property(lexer, parser);
+  }
+
+  if (!has_token_consume(lexer, CBrace)) {
+    return NULL;
+  }
+  ast_t props = AST_Properties(parser->asts + start_idx, (end_idx - start_idx));
+  expr = parser_add_loose(parser, &props);
+  return expr;
+}
+
+ast_t *parse_func_decl(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *ident = NULL;
+  if (has_token_consume(lexer, Fn)) {
+    ident = parse_ident(lexer, parser);
+    if (ident != NULL) {
+      if (has_token_consume(lexer, OParen)) {
+        // TODO:: impl parse_argument
+        ast_t *args = NULL;
+        return args;
+      }
+    }
+    ident = NULL;
+    return ident;
+  }
+  return ident;
+}
+
+ast_t *parse_type_decl(lex_source_t *lexer, parser_source_t *parser) {
+  if (has_token_consume(lexer, Type)) {
+    ast_t *ident = parse_ident(lexer, parser);
+    if (ident != NULL) {
+      ast_t *signature = NULL;
+      if (has_token_consume(lexer, Colon)) {
+        signature = parse_signature(lexer, parser);
+      }
+      ast_t *properties = parse_properties(lexer, parser);
+      ast_t combined = AST_TypeDecl(0, ident, signature, properties);
+      return parser_add_loose(parser, &combined);
+    }
+    return NULL;
+  }
+
+  return NULL;
+}
+ast_t *parse_serial_types(lex_source_t *lexer, parser_source_t *parser);
+ast_t *parse_signature(lex_source_t *lexer, parser_source_t *parser) {
+  ast_t *val = parse_val_type(lexer, parser);
+  // TODO:: implement serial types part
+  return val;
+}
+ast_t *parse_program(lex_source_t *lexer, parser_source_t *parser);
 
 void parser_free(parser_source_t *parser) {
   for (size_t i = 0; i < parser->free_len; i++) {

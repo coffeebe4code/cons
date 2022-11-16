@@ -132,7 +132,7 @@ void test_keywords() {
 
 void test_len_words() {
   char *null_end = "symbol1";
-  char *underscore = "symbol_1";
+  char *underscore = "symbol_1\n";
   char *dash = "symbol-1;";
   char *func = "do_something()";
   size_t len = word_len_check(null_end);
@@ -176,20 +176,20 @@ int main() {
     ASSERT_STR_EQ(keyword_list[4], "mut");
     ASSERT((token_e)4 == Mut);
 
-    ASSERT_STR_EQ(keyword_list[12], "u8");
-    ASSERT((token_e)12 == U8);
+    ASSERT_STR_EQ(keyword_list[14], "u8");
+    ASSERT((token_e)14 == U8);
 
-    ASSERT_STR_EQ(keyword_list[20], "else");
-    ASSERT((token_e)20 == Else);
+    ASSERT_STR_EQ(keyword_list[22], "else");
+    ASSERT((token_e)22 == Else);
 
-    ASSERT_STR_EQ(keyword_list[30], "in");
-    ASSERT((token_e)30 == In);
+    ASSERT_STR_EQ(keyword_list[32], "in");
+    ASSERT((token_e)32 == In);
 
-    ASSERT_STR_EQ(keyword_list[40], "match");
-    ASSERT((token_e)40 == Match);
+    ASSERT_STR_EQ(keyword_list[42], "match");
+    ASSERT((token_e)42 == Match);
 
-    ASSERT_STR_EQ(keyword_list[45], "void");
-    ASSERT((token_e)45 == Void);
+    ASSERT_STR_EQ(keyword_list[47], "void");
+    ASSERT((token_e)47 == Void);
   });
 
   SHOULDF("test easy", test_easy);

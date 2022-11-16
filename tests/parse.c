@@ -7,6 +7,7 @@ DECLARE_MOCK(lexeme_t, lex_peek, lex_source_t *lex);
 DECLARE_MOCK(lexeme_t, lex_collect, lex_source_t *lex);
 DECLARE_MOCK(lex_source_t, lex_new, char *start);
 DECLARE_MOCK(int, is_lit, token_e t);
+DECLARE_MOCK(int, is_val, token_e t);
 DECLARE_MOCK(int, is_un_op, token_e t);
 DECLARE_MOCK(int, is_num, token_e t);
 DECLARE_MOCK(int, is_high_bin, token_e t);
@@ -97,7 +98,7 @@ void test_returns() {
   ASSERT(val->expr_kind == RetFn);
   ASSERT(val->tok1.ret->expr_kind == Number);
   ASSERT(val->tok1.ret->tok1.number == 7);
-  ASSERT(val->tok4.semi == 1);
+  ASSERT(val->tok4.semi_opt == SColon);
 
   parser_free(&parse);
 }
@@ -143,7 +144,7 @@ void test_reassign() {
   ASSERT_STR_EQ(val->tok1.ident_ptr->tok1.ident, "x");
   ASSERT(val->tok2.as_op == AddAs);
   ASSERT(val->tok3.assignment->tok1.number == 7);
-  ASSERT(val->tok4.semi == 1);
+  ASSERT(val->tok4.semi_opt == SColon);
 
   parser_free(&parse);
 }
